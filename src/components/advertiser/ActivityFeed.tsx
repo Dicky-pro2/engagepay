@@ -9,7 +9,7 @@ export default function ActivityFeed() {
       {activity.length === 0 ? (
         <div className="text-center py-10 text-slatec">
           <div className="text-3xl mb-2">📭</div>
-          No activity yet
+          No activity yet but don't worry, we'll keep you updated with the latest news and updates.
         </div>
       ) : (
         <div className="space-y-2">
