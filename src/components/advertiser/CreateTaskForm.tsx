@@ -7,7 +7,7 @@ import type { Task } from '../../types';
 
 export default function CreateTaskForm() {
   const { user, updateWallet } = useAuthStore();
-  const { addTask, pushActivity } = useAppStore();
+  const { addTask, pushActivity, addTransaction } = useAppStore();
 
   const [platform, setPlatform] = useState(PLATFORMS[0]);
   const [taskType, setTaskType] = useState<string>(TASK_TYPES[0]);
@@ -52,6 +52,11 @@ export default function CreateTaskForm() {
     addTask(task);
     updateWallet(user.walletBalance - totalCost);
     pushActivity(`New task posted: ${taskType} on ${platform} · 🪙${reward} ×${slots}`, 'violet');
+    addTransaction({
+      type: 'task_payment',
+      amount: -totalCost,
+      description: `Task posted: ${taskType} on ${platform}`
+    });
     notify.taskPosted(totalCost);
 
     // Reset form

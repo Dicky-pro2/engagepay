@@ -37,3 +37,31 @@ export interface ActivityItem {
   type: 'violet' | 'green';
   time: string;
 }
+
+export type TransactionType = 'deposit' | 'withdrawal' | 'task_payment' | 'task_earning' | 'refund' | 'bonus';
+
+export interface Transaction {
+  id: string;
+  type: TransactionType;
+  amount: number; // positive = credit, negative = debit
+  description: string;
+  createdAt: string;
+}
+
+export interface Task {
+  id: string;
+  advertiser: string;
+  advertiserName: string;
+  platform: string;
+  taskType: string;
+  title: string;
+  instructions: string;
+  url: string;
+  reward: number;
+  totalSlots: number;
+  slotsLeft: number;
+  completionCount: number;
+  status: 'active' | 'paused' | 'completed' | 'cancelled';
+  createdAt: string;
+  completedByCurrentUser?: boolean; // NEW
+}
