@@ -65,3 +65,16 @@ export interface Task {
   createdAt: string;
   completedByCurrentUser?: boolean; // NEW
 }
+
+export type WithdrawalMethod = 'bank_transfer' | 'paypal' | 'crypto' | 'mobile_money';
+
+export type WithdrawalStatus = 'pending' | 'processing' | 'completed' | 'rejected';
+
+export interface Withdrawal {
+  id: string;
+  amount: number;
+  method: WithdrawalMethod;
+  accountDetails: string;
+  status: WithdrawalStatus;
+  createdAt: string;
+}

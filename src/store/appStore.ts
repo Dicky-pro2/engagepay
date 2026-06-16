@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Task, ActivityItem, Transaction } from '../types';
+import type { Task, ActivityItem, Transaction, Withdrawal } from '../types';
 import { mockTasks } from '../services/mockData';
 
 interface AppState {
@@ -7,6 +7,7 @@ interface AppState {
   myTasks: Task[];
   activity: ActivityItem[];
   transactions: Transaction[];
+  withdrawals: Withdrawal[];
 
   setTasks: (tasks: Task[]) => void;
   setMyTasks: (tasks: Task[]) => void;
@@ -15,6 +16,7 @@ interface AppState {
   updateTaskStatus: (taskId: string, status: Task['status']) => Task | undefined;
   addTransaction: (tx: Omit<Transaction, 'id' | 'createdAt'>) => void;
   completeTask: (taskId: string) => Task | undefined;
+  addWithdrawal: (w: Omit<Withdrawal, 'id' | 'createdAt' | 'status'>) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -22,6 +24,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   myTasks: [],
   activity: [],
   transactions: [],
+  withdrawals: [],
 
   setTasks: (tasks) => set({ tasks }),
   setMyTasks: (tasks) => set({ myTasks: tasks }),
@@ -42,20 +45,18 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   updateTaskStatus: (taskId, status) => {
     let updatedTask: Task | undefined;
-    set((state) =>{
-      const updateTask = (list: Task[]) =>
+    set((state) => {
+      const update = (list: Task[]) =>
         list.map((t) => {
           if (t.id !== taskId) return t;
           updatedTask = { ...t, status };
           return updatedTask;
         });
-
-        return {
-          myTasks: updateTask(state.myTasks),
-          tasks: updateTask(state.tasks),
-        };
+      return {
+        myTasks: update(state.myTasks),
+        tasks: update(state.tasks),
+      };
     });
-
     return updatedTask;
   },
 
@@ -66,10 +67,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         ...state.transactions,
       ],
     })),
+
   completeTask: (taskId) => {
     let updatedTask: Task | undefined;
-
-    
     set((state) => {
       const update = (list: Task[]) =>
         list.map((t) => {
@@ -83,13 +83,25 @@ export const useAppStore = create<AppState>((set, get) => ({
             completedByCurrentUser: true,
           };
           return updatedTask;
-      }); 
-
+        });
       return {
-        myTasks: update(state.myTasks),
         tasks: update(state.tasks),
+        myTasks: update(state.myTasks),
       };
     });
     return updatedTask;
   },
+
+  addWithdrawal: (w) =>
+    set((state) => ({
+      withdrawals: [
+        {
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          status: 'pending',
+          ...w,
+        },
+        ...state.withdrawals,
+      ],
+    })),
 }));
