@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import { mockUsers } from '../services/mockData';
 import { notify } from '../utils/notify';
 import { AuthShell, GoogleIcon, LoadingSpinner } from './Login';
-import type { Role } from '../types';
+
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -216,6 +216,7 @@ function RoleButton({
   };
 
   return (
+    <motion.button>
     <button
       type="button"
       onClick={onClick}
@@ -226,5 +227,6 @@ function RoleButton({
       {icon}
       {label}
     </button>
+    </motion.button>
   );
 }

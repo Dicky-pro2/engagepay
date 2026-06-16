@@ -78,3 +78,33 @@ export interface Withdrawal {
   status: WithdrawalStatus;
   createdAt: string;
 }
+
+export type NotificationType =
+  | 'task_completed'
+  | 'task_approved'
+  | 'task_rejected'
+  | 'deposit_success'
+  | 'withdrawal_processed'
+  | 'new_task'
+  | 'welcome';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface Submission {
+  id: string;
+  taskId: string;
+  taskTitle: string;
+  platform: string;
+  taskType: string;
+  reward: number;
+  proof: string;
+  status: 'approved' | 'pending' | 'rejected';
+  createdAt: string;
+}

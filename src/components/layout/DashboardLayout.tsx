@@ -1,21 +1,24 @@
+import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ListChecks, Wallet as WalletIcon, LogOut, RefreshCw } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { LayoutDashboard, ListChecks, Wallet as WalletIcon, LogOut, Bell, ClipboardList } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useAppStore } from '../../store/appStore';
 import { notify } from '../../utils/notify';
+import NotificationPanel from './NotificationPanel';
 
 export default function DashboardLayout() {
-  const { user, logout, switchRole } = useAuthStore();
+  const { user, logout } = useAuthStore();
+  const notifications = useAppStore((s) => s.notifications);
   const navigate = useNavigate();
+  const [showNotifications, setShowNotifications] = useState(false);
   const isAdvertiser = user?.role === 'advertiser';
 
-  const handleSwitchRole = () => {
-    const newRole = isAdvertiser ? 'earner' : 'advertiser';
-    switchRole(newRole);
-    notify.info(`Switched to ${newRole === 'advertiser' ? 'Advertiser' : 'Earner'} view`);
-  };
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const handleLogout = () => {
     logout();
+    notify.info('Logged out successfully');
     navigate('/');
   };
 
@@ -23,13 +26,14 @@ export default function DashboardLayout() {
     { to: '/dashboard', icon: LayoutDashboard, label: 'Overview', end: true },
     { to: '/dashboard/tasks', icon: ListChecks, label: 'Tasks' },
     { to: '/dashboard/wallet', icon: WalletIcon, label: 'Wallet' },
+    ...(isAdvertiser ? [] : [{ to: '/dashboard/submissions', icon: ClipboardList, label: 'Submissions'}]),
   ];
 
   return (
     <div className="min-h-screen bg-navy">
-      {/* Top Nav */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-navy/90 border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+          {/* Logo */}
           <div className="font-sora font-extrabold text-xl">
             Engage<span className="text-violet-light">Pay</span>
           </div>
@@ -56,20 +60,36 @@ export default function DashboardLayout() {
             ))}
           </div>
 
-          {/* Right side: wallet, switch, logout */}
+          {/* Right side */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Wallet balance */}
             <div className="bg-card border border-border rounded-full px-3 sm:px-4 py-1.5 text-sm font-semibold flex items-center gap-1.5">
               <span className="text-amber-400">🪙</span>
               <span>{(user?.walletBalance ?? 0).toLocaleString()}</span>
             </div>
-            <button
-              onClick={handleSwitchRole}
-              title="Switch role"
-              className="border border-border rounded-full px-3 py-1.5 text-xs sm:text-sm text-slatec hover:border-violet-light hover:text-white transition-all flex items-center gap-1.5"
-            >
-              <RefreshCw size={14} />
-              <span className="hidden sm:inline">Switch</span>
-            </button>
+
+            {/* Bell */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications((v) => !v)}
+                className="border border-border rounded-full p-1.5 sm:p-2 text-slatec hover:text-white hover:border-violet-light transition-all relative"
+              >
+                <Bell size={16} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-violet rounded-full text-white text-[10px] font-bold flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              <AnimatePresence>
+                {showNotifications && (
+                  <NotificationPanel onClose={() => setShowNotifications(false)} />
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Logout */}
             <button
               onClick={handleLogout}
               title="Logout"
@@ -80,7 +100,7 @@ export default function DashboardLayout() {
           </div>
         </div>
 
-        {/* Mobile bottom-style tabs (shown under header on small screens) */}
+        {/* Mobile tabs */}
         <div className="sm:hidden flex items-center justify-around border-t border-border px-2 py-2">
           {navItems.map((item) => (
             <NavLink
@@ -89,7 +109,11 @@ export default function DashboardLayout() {
               end={item.end}
               className={({ isActive }) =>
                 `flex flex-col items-center gap-1 px-4 py-1 rounded-lg text-xs font-medium transition-all ${
-                  isActive ? (isAdvertiser ? 'text-violet-light' : 'text-emerald2') : 'text-slatec'
+                  isActive
+                    ? isAdvertiser
+                      ? 'text-violet-light'
+                      : 'text-emerald2'
+                    : 'text-slatec'
                 }`
               }
             >
@@ -100,7 +124,6 @@ export default function DashboardLayout() {
         </div>
       </nav>
 
-      {/* Page content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Outlet />
       </main>

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Task, ActivityItem, Transaction, Withdrawal } from '../types';
+import type { Task, ActivityItem, Transaction, Withdrawal, Notification, Submission } from '../types';
 import { mockTasks } from '../services/mockData';
 
 interface AppState {
@@ -8,6 +8,8 @@ interface AppState {
   activity: ActivityItem[];
   transactions: Transaction[];
   withdrawals: Withdrawal[];
+  notifications: Notification[];
+  submissions: Submission[];
 
   setTasks: (tasks: Task[]) => void;
   setMyTasks: (tasks: Task[]) => void;
@@ -15,16 +17,30 @@ interface AppState {
   pushActivity: (msg: string, type?: 'violet' | 'green') => void;
   updateTaskStatus: (taskId: string, status: Task['status']) => Task | undefined;
   addTransaction: (tx: Omit<Transaction, 'id' | 'createdAt'>) => void;
-  completeTask: (taskId: string) => Task | undefined;
+  completeTask: (taskId: string, proof: string) => Task | undefined;
   addWithdrawal: (w: Omit<Withdrawal, 'id' | 'createdAt' | 'status'>) => void;
+  addNotification: (n: Omit<Notification, 'id' | 'createdAt' | 'isRead'>) => void;
+  markAllNotificationsRead: () => void;
+  markNotificationRead: (id: string) => void;
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set) => ({
   tasks: [...mockTasks],
   myTasks: [],
   activity: [],
   transactions: [],
   withdrawals: [],
+  submissions: [],
+  notifications: [
+    {
+      id: crypto.randomUUID(),
+      type: 'welcome',
+      title: 'Welcome to EngagePay! 🎉',
+      message: 'Your account is ready. Start exploring tasks or post your first campaign.',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    },
+  ],
 
   setTasks: (tasks) => set({ tasks }),
   setMyTasks: (tasks) => set({ myTasks: tasks }),
@@ -68,9 +84,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       ],
     })),
 
-  completeTask: (taskId) => {
+  completeTask: (taskId, proof) => {
     let updatedTask: Task | undefined;
+
     set((state) => {
+      const task = state.tasks.find((t) => t.id === taskId);
+
       const update = (list: Task[]) =>
         list.map((t) => {
           if (t.id !== taskId) return t;
@@ -84,11 +103,26 @@ export const useAppStore = create<AppState>((set, get) => ({
           };
           return updatedTask;
         });
+
+      const newSubmission: Submission = {
+        id: crypto.randomUUID(),
+        taskId,
+        taskTitle: task ? `${task.taskType} on ${task.platform}` : 'Unknown Task',
+        platform: task?.platform ?? '',
+        taskType: task?.taskType ?? '',
+        reward: task?.reward ?? 0,
+        proof,
+        status: 'approved',
+        createdAt: new Date().toISOString(),
+      };
+
       return {
         tasks: update(state.tasks),
         myTasks: update(state.myTasks),
+        submissions: [newSubmission, ...state.submissions],
       };
     });
+
     return updatedTask;
   },
 
@@ -103,5 +137,30 @@ export const useAppStore = create<AppState>((set, get) => ({
         },
         ...state.withdrawals,
       ],
+    })),
+
+  addNotification: (n) =>
+    set((state) => ({
+      notifications: [
+        {
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          ...n,
+        },
+        ...state.notifications,
+      ],
+    })),
+
+  markAllNotificationsRead: () =>
+    set((state) => ({
+      notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
+    })),
+
+  markNotificationRead: (id) =>
+    set((state) => ({
+      notifications: state.notifications.map((n) =>
+        n.id === id ? { ...n, isRead: true } : n
+      ),
     })),
 }));

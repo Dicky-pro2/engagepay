@@ -1,18 +1,19 @@
-import { useState } from 'react';
-import { useAuthStore } from '../../store/authStore';
-import { useAppStore } from '../../store/appStore';
-import { PLATFORM_ICONS, PLATFORMS, TASK_TYPES } from '../../services/mockData';
-import { notify } from '../../utils/notify';
-import type { Task } from '../../types';
+import { useState } from "react";
+import { useAuthStore } from "../../store/authStore";
+import { useAppStore } from "../../store/appStore";
+import { PLATFORM_ICONS, PLATFORMS, TASK_TYPES } from "../../services/mockData";
+import { notify } from "../../utils/notify";
+import type { Task } from "../../types";
 
 export default function CreateTaskForm() {
   const { user, updateWallet } = useAuthStore();
-  const { addTask, pushActivity, addTransaction } = useAppStore();
+  const { addTask, pushActivity, addTransaction, addNotification } =
+    useAppStore();
 
   const [platform, setPlatform] = useState(PLATFORMS[0]);
   const [taskType, setTaskType] = useState<string>(TASK_TYPES[0]);
-  const [url, setUrl] = useState('');
-  const [instructions, setInstructions] = useState('');
+  const [url, setUrl] = useState("");
+  const [instructions, setInstructions] = useState("");
   const [reward, setReward] = useState(10);
   const [slots, setSlots] = useState(10);
 
@@ -22,13 +23,15 @@ export default function CreateTaskForm() {
     e.preventDefault();
 
     if (!url.trim()) {
-      notify.error('Please enter a profile or post URL');
+      notify.error("Please enter a profile or post URL");
       return;
     }
     if (!user) return;
 
     if (user.walletBalance < totalCost) {
-      notify.error(`Not enough coins! Need 🪙${totalCost.toLocaleString()} but have 🪙${user.walletBalance.toLocaleString()}`);
+      notify.error(
+        `Not enough coins! Need 🪙${totalCost.toLocaleString()} but have 🪙${user.walletBalance.toLocaleString()}`,
+      );
       return;
     }
 
@@ -39,29 +42,38 @@ export default function CreateTaskForm() {
       platform,
       taskType,
       title: `${taskType} on ${platform}`,
-      instructions: instructions.trim() || `Go to the link and ${taskType.toLowerCase()} as instructed.`,
+      instructions:
+        instructions.trim() ||
+        `Go to the link and ${taskType.toLowerCase()} as instructed.`,
       url: url.trim(),
       reward,
       totalSlots: slots,
       slotsLeft: slots,
       completionCount: 0,
-      status: 'active',
+      status: "active",
       createdAt: new Date().toISOString(),
     };
 
     addTask(task);
     updateWallet(user.walletBalance - totalCost);
-    pushActivity(`New task posted: ${taskType} on ${platform} · 🪙${reward} ×${slots}`, 'violet');
+    pushActivity(
+      `New task posted: ${taskType} on ${platform} · 🪙${reward} ×${slots}`,
+      "violet",
+    );
     addTransaction({
-      type: 'task_payment',
+      type: "task_payment",
       amount: -totalCost,
-      description: `Task posted: ${taskType} on ${platform}`
+      description: `Task posted: ${taskType} on ${platform}`,
     });
-    notify.taskPosted(totalCost);
+    addNotification({
+      type: "new_task",
+      title: "🚀 Task Posted!",
+      message: `Your ${taskType} task on ${platform} is now live with ${slots} slots.`,
+    });
 
     // Reset form
-    setUrl('');
-    setInstructions('');
+    setUrl("");
+    setInstructions("");
   };
 
   return (
@@ -77,8 +89,8 @@ export default function CreateTaskForm() {
               onClick={() => setPlatform(p)}
               className={`rounded-xl px-2 py-2.5 text-center text-xs font-medium transition-all border ${
                 platform === p
-                  ? 'border-violet bg-violet/15 text-violet-light'
-                  : 'border-border text-slatec hover:border-white/20'
+                  ? "border-violet bg-violet/15 text-violet-light"
+                  : "border-border text-slatec hover:border-white/20"
               }`}
             >
               <span className="block text-lg mb-0.5">{PLATFORM_ICONS[p]}</span>
@@ -98,7 +110,17 @@ export default function CreateTaskForm() {
         >
           {TASK_TYPES.map((t) => (
             <option key={t} value={t}>
-              {t === 'Follow' ? 'Follow Account' : t === 'Like' ? 'Like Post' : t === 'Comment' ? 'Comment on Post' : t === 'Share' ? 'Share / Retweet' : t === 'Subscribe' ? 'Subscribe Channel' : 'Watch Video (30s+)'}
+              {t === "Follow"
+                ? "Follow Account"
+                : t === "Like"
+                  ? "Like Post"
+                  : t === "Comment"
+                    ? "Comment on Post"
+                    : t === "Share"
+                      ? "Share / Retweet"
+                      : t === "Subscribe"
+                        ? "Subscribe Channel"
+                        : "Watch Video (30s+)"}
             </option>
           ))}
         </select>
@@ -153,10 +175,15 @@ export default function CreateTaskForm() {
       {/* Total cost preview */}
       <div className="bg-navy-2 border border-border rounded-xl px-4 py-2.5 flex items-center justify-between text-sm">
         <span className="text-slatec">Total cost</span>
-        <span className="font-sora font-bold text-amber-400">🪙 {totalCost.toLocaleString()}</span>
+        <span className="font-sora font-bold text-amber-400">
+          🪙 {totalCost.toLocaleString()}
+        </span>
       </div>
 
-      <button type="submit" className="btn-primary w-full font-sora flex items-center justify-center gap-2">
+      <button
+        type="submit"
+        className="btn-primary w-full font-sora flex items-center justify-center gap-2"
+      >
         🚀 Post Task
       </button>
     </form>
