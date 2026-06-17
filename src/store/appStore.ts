@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Task, ActivityItem, Transaction, Withdrawal, Notification, Submission } from '../types';
+import type { Task, TaskSubmission, ActivityItem, Transaction, Withdrawal, Notification, Submission } from '../types';
 import { mockTasks } from '../services/mockData';
 
 interface AppState {
@@ -22,6 +22,7 @@ interface AppState {
   addNotification: (n: Omit<Notification, 'id' | 'createdAt' | 'isRead'>) => void;
   markAllNotificationsRead: () => void;
   markNotificationRead: (id: string) => void;
+  reviewTaskSubmission: (taskId: string, submissionId: string, action: 'approve' | 'reject', note?: string) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -90,6 +91,15 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => {
       const task = state.tasks.find((t) => t.id === taskId);
 
+      const newTaskSubmission: TaskSubmission = {
+        id: crypto.randomUUID(),
+        earnerName: 'Current Earner',
+        earnerId: 'earner_current',
+        proof,
+        status: 'approved',
+        createdAt: new Date().toISOString(),
+      };
+
       const update = (list: Task[]) =>
         list.map((t) => {
           if (t.id !== taskId) return t;
@@ -100,6 +110,7 @@ export const useAppStore = create<AppState>((set) => ({
             completionCount: t.completionCount + 1,
             status: slotsLeft <= 0 ? 'completed' : t.status,
             completedByCurrentUser: true,
+            taskSubmissions: [...(t.taskSubmissions ?? []), newTaskSubmission],
           };
           return updatedTask;
         });
@@ -163,4 +174,35 @@ export const useAppStore = create<AppState>((set) => ({
         n.id === id ? { ...n, isRead: true } : n
       ),
     })),
+
+  reviewTaskSubmission: (taskId, submissionId, action, note) => {
+    set((state) => {
+      const update = (list: Task[]) =>
+        list.map((t) => {
+          if (t.id !== taskId) return t;
+          const updatedSubmissions = (t.taskSubmissions ?? []).map((s) => {
+            if (s.id !== submissionId) return s;
+            return {
+              ...s,
+              status: action === 'approve' ? 'approved' as const : 'rejected' as const,
+              reviewNote: note,
+            };
+          });
+          const slotsLeft = action === 'reject' ? t.slotsLeft + 1 : t.slotsLeft;
+          return {
+            ...t,
+            taskSubmissions: updatedSubmissions,
+            slotsLeft,
+            completionCount: action === 'reject'
+              ? Math.max(0, t.completionCount - 1)
+              : t.completionCount,
+          };
+        });
+
+      return {
+        tasks: update(state.tasks),
+        myTasks: update(state.myTasks),
+      };
+    });
+  },
 }));

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, ListChecks, Wallet as WalletIcon, LogOut, Bell, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, ListChecks, Wallet as WalletIcon, LogOut, Bell, ClipboardList, ClipboardCheck } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useAppStore } from '../../store/appStore';
 import { notify } from '../../utils/notify';
@@ -26,7 +26,7 @@ export default function DashboardLayout() {
     { to: '/dashboard', icon: LayoutDashboard, label: 'Overview', end: true },
     { to: '/dashboard/tasks', icon: ListChecks, label: 'Tasks' },
     { to: '/dashboard/wallet', icon: WalletIcon, label: 'Wallet' },
-    ...(isAdvertiser ? [] : [{ to: '/dashboard/submissions', icon: ClipboardList, label: 'Submissions'}]),
+    ...(isAdvertiser ? [{ to: '/dashboard/review', icon: ClipboardCheck, label: 'Review'}] : [{ to: '/dashboard/submissions', icon: ClipboardList, label: 'Submissions'}]),
   ];
 
   return (

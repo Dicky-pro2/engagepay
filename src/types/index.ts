@@ -63,7 +63,8 @@ export interface Task {
   completionCount: number;
   status: 'active' | 'paused' | 'completed' | 'cancelled';
   createdAt: string;
-  completedByCurrentUser?: boolean; // NEW
+  completedByCurrentUser?: boolean;
+  taskSubmissions?: TaskSubmission[];
 }
 
 export type WithdrawalMethod = 'bank_transfer' | 'paypal' | 'crypto' | 'mobile_money';
@@ -106,5 +107,15 @@ export interface Submission {
   reward: number;
   proof: string;
   status: 'approved' | 'pending' | 'rejected';
+  createdAt: string;
+}
+
+export interface TaskSubmission {
+  id: string;
+  earnerName: string;
+  earnerId: string;
+  proof: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewNote?: string;
   createdAt: string;
 }
