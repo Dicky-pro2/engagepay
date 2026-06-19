@@ -11,6 +11,8 @@ import Wallet from './pages/Wallet';
 import { useAuthStore } from './store/authStore';
 import Submissions from './pages/Submissions';
 import Review from './pages/Review';
+import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
 
 export default function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -32,9 +34,10 @@ export default function App() {
           <Route path="wallet" element={<Wallet />} />
           <Route path="submissions" element={<Submissions />} />
           <Route path="review" element={<Review />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

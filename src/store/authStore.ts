@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, Role } from '../types';
+import type { User } from '../types';
 
 interface AuthState {
   user: User | null;
@@ -9,8 +9,8 @@ interface AuthState {
   isAuthenticated: boolean;
   login: (user: User, accessToken: string, refreshToken: string) => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
-  switchRole: (role: Role) => void;
   updateWallet: (newBalance: number) => void;
+  updateName: (name: string) => void;
   logout: () => void;
 }
 
@@ -28,18 +28,23 @@ export const useAuthStore = create<AuthState>()(
       setTokens: (accessToken, refreshToken) =>
         set({ accessToken, refreshToken, isAuthenticated: true }),
 
-      switchRole: (role) =>
-        set((state) => ({
-          user: state.user ? { ...state.user, role } : state.user,
-        })),
-
       updateWallet: (newBalance) =>
         set((state) => ({
           user: state.user ? { ...state.user, walletBalance: newBalance } : state.user,
         })),
 
+      updateName: (name) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, name } : state.user,
+        })),
+
       logout: () =>
-        set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false }),
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false,
+        }),
     }),
     {
       name: 'engagepay-auth',

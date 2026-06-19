@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Megaphone, Coins } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
@@ -10,10 +10,13 @@ import { AuthShell, GoogleIcon, LoadingSpinner } from './Login';
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const login = useAuthStore((s) => s.login);
 
+  const initialRole = searchParams.get('role') === 'advertiser' ? 'advertiser' : 'earner';
+
   const [form, setForm] = useState({ name: '', email: '', password: '' });
-  const [role, setRole] = useState<'advertiser' | 'earner'>('earner');
+  const [role, setRole] = useState<'advertiser' | 'earner'>(initialRole);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);

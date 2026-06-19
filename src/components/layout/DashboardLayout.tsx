@@ -1,7 +1,16 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, ListChecks, Wallet as WalletIcon, LogOut, Bell, ClipboardList, ClipboardCheck } from 'lucide-react';
+import {
+  LayoutDashboard,
+  ListChecks,
+  Wallet as WalletIcon,
+  LogOut,
+  Bell,
+  ClipboardList,
+  ClipboardCheck,
+  UserCircle,
+} from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useAppStore } from '../../store/appStore';
 import { notify } from '../../utils/notify';
@@ -24,17 +33,20 @@ export default function DashboardLayout() {
 
   const navItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Overview', end: true },
-    { to: '/dashboard/tasks', icon: ListChecks, label: 'Tasks' },
-    { to: '/dashboard/wallet', icon: WalletIcon, label: 'Wallet' },
-    ...(isAdvertiser ? [{ to: '/dashboard/review', icon: ClipboardCheck, label: 'Review'}] : [{ to: '/dashboard/submissions', icon: ClipboardList, label: 'Submissions'}]),
+    { to: '/dashboard/tasks', icon: ListChecks, label: 'Tasks', end: false },
+    { to: '/dashboard/wallet', icon: WalletIcon, label: 'Wallet', end: false },
+    ...(isAdvertiser
+      ? [{ to: '/dashboard/review', icon: ClipboardCheck, label: 'Review', end: false }]
+      : [{ to: '/dashboard/submissions', icon: ClipboardList, label: 'Submissions', end: false }]),
   ];
 
   return (
     <div className="min-h-screen bg-navy">
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-navy/90 border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+
           {/* Logo */}
-          <div className="font-sora font-extrabold text-xl">
+          <div className="font-sora font-extrabold text-xl flex-shrink-0">
             Engage<span className="text-violet-light">Pay</span>
           </div>
 
@@ -62,6 +74,16 @@ export default function DashboardLayout() {
 
           {/* Right side */}
           <div className="flex items-center gap-2 sm:gap-3">
+
+            {/* Role badge */}
+            <div className={`hidden sm:flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold border ${
+              isAdvertiser
+                ? 'bg-violet/10 border-violet/30 text-violet-light'
+                : 'bg-emerald2/10 border-emerald2/30 text-emerald2'
+            }`}>
+              {isAdvertiser ? '📢 Advertiser' : '💰 Earner'}
+            </div>
+
             {/* Wallet balance */}
             <div className="bg-card border border-border rounded-full px-3 sm:px-4 py-1.5 text-sm font-semibold flex items-center gap-1.5">
               <span className="text-amber-400">🪙</span>
@@ -81,13 +103,27 @@ export default function DashboardLayout() {
                   </span>
                 )}
               </button>
-
               <AnimatePresence>
                 {showNotifications && (
                   <NotificationPanel onClose={() => setShowNotifications(false)} />
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Profile */}
+            <NavLink
+              to="/dashboard/profile"
+              title="Profile"
+              className={({ isActive }) =>
+                `border rounded-full p-1.5 sm:p-2 transition-all ${
+                  isActive
+                    ? 'border-violet-light text-violet-light'
+                    : 'border-border text-slatec hover:border-violet-light hover:text-white'
+                }`
+              }
+            >
+              <UserCircle size={16} />
+            </NavLink>
 
             {/* Logout */}
             <button
@@ -108,7 +144,7 @@ export default function DashboardLayout() {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-1 px-4 py-1 rounded-lg text-xs font-medium transition-all ${
+                `flex flex-col items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
                   isActive
                     ? isAdvertiser
                       ? 'text-violet-light'
@@ -121,6 +157,20 @@ export default function DashboardLayout() {
               {item.label}
             </NavLink>
           ))}
+          {/* Profile in mobile tab bar too */}
+          <NavLink
+            to="/dashboard/profile"
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                isActive
+                  ? isAdvertiser ? 'text-violet-light' : 'text-emerald2'
+                  : 'text-slatec'
+              }`
+            }
+          >
+            <UserCircle size={18} />
+            Profile
+          </NavLink>
         </div>
       </nav>
 

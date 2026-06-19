@@ -1,36 +1,10 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Megaphone, Coins, ArrowRight, X } from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
-import { mockUsers } from '../services/mockData';
-//import type { Role } from '../types';
-import { notify } from '../utils/notify';
+import { motion } from 'framer-motion';
+import { Megaphone, Coins, ArrowRight } from 'lucide-react';
 
 export default function Landing() {
   const navigate = useNavigate();
-  const login = useAuthStore((s) => s.login);
-  const [selectedRole, setSelectedRole] = useState<'advertiser' | 'earner' | null>(null);
-  const [form, setForm] = useState({ name: '', email: '' });
 
- const handleEnter = (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!selectedRole) return;
-
-  const base = mockUsers[selectedRole];
-  const user = {
-    ...base,
-    name: form.name || base.name,
-    email: form.email || base.email,
-  };
-
-  login(user, 'mock_access_token', 'mock_refresh_token');
-  notify.success(`Welcome, ${user.name}! 🎉`);
-  navigate('/dashboard');
-};
-
-
-  
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-12 relative overflow-hidden">
       {/* Background orbs */}
@@ -50,14 +24,14 @@ export default function Landing() {
         </p>
       </motion.div>
 
-      <div className="flex flex-col sm:flex-row gap-5 relative z-10 w-full max-w-2xl justify-center items-stretch">
+      <div className="flex flex-col sm:flex-row gap-5 relative z-10 w-full max-w-2xl justify-center">
         <RoleCard
           icon={<Megaphone size={32} />}
           title="I'm an Advertiser"
           desc="Post tasks for followers, likes & comments. Fund your wallet and watch engagement grow."
           color="violet"
-          buttonLabel="Post Tasks"
-          onClick={() => setSelectedRole('advertiser')}
+          buttonLabel="Get Started"
+          onClick={() => navigate('/signup?role=advertiser')}
         />
         <RoleCard
           icon={<Coins size={32} />}
@@ -65,74 +39,25 @@ export default function Landing() {
           desc="Browse tasks, complete them, and earn coins instantly. Withdraw anytime."
           color="green"
           buttonLabel="Start Earning"
-          onClick={() => setSelectedRole('earner')}
+          onClick={() => navigate('/signup?role=earner')}
         />
       </div>
 
-      {/* Login modal */}
-      <AnimatePresence>
-        {selectedRole && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 px-4"
-            onClick={() => setSelectedRole(null)}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.98 }}
-              onClick={(e) => e.stopPropagation()}
-              className="card p-6 sm:p-8 w-full max-w-md relative"
-            >
-              <button
-                onClick={() => setSelectedRole(null)}
-                className="absolute top-4 right-4 text-slatec hover:text-white transition-colors"
-              >
-                <X size={20} />
-              </button>
-
-              <h2 className="font-sora font-bold text-xl mb-1">
-                Continue as {selectedRole === 'advertiser' ? 'Advertiser' : 'Earner'}
-              </h2>
-              <p className="text-slatec text-sm mb-6">
-                This is a demo login — enter any name/email to continue.
-              </p>
-
-              <form onSubmit={handleEnter} className="space-y-4">
-                <div>
-                  <label className="label">Name</label>
-                  <input
-                    className="input"
-                    placeholder={mockUsers[selectedRole].name}
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="label">Email</label>
-                  <input
-                    className="input"
-                    type="email"
-                    placeholder={mockUsers[selectedRole].email}
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className={`w-full font-sora font-bold rounded-xl px-6 py-3 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 text-white ${
-                    selectedRole === 'advertiser' ? 'bg-violet hover:bg-violet-dark' : 'bg-emerald2 hover:bg-emerald-600'
-                  }`}
-                >
-                  Enter Dashboard <ArrowRight size={18} />
-                </button>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Already have account */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="mt-8 text-slatec text-sm relative z-10"
+      >
+        Already have an account?{' '}
+        <button
+          onClick={() => navigate('/login')}
+          className="text-violet-light font-semibold hover:underline"
+        >
+          Log in
+        </button>
+      </motion.p>
     </div>
   );
 }
