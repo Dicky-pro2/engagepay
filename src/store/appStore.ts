@@ -1,8 +1,16 @@
 import { create } from 'zustand';
-import type { Task, TaskSubmission, ActivityItem, Transaction, Withdrawal, Notification, Submission } from '../types';
+import type {
+  Task,
+  TaskSubmission,
+  ActivityItem,
+  Transaction,
+  Withdrawal,
+  Notification,
+  Submission,
+} from '../types';
 import { mockTasks } from '../services/mockData';
 
-interface AppState {
+interface UserAppData {
   tasks: Task[];
   myTasks: Task[];
   activity: ActivityItem[];
@@ -10,6 +18,13 @@ interface AppState {
   withdrawals: Withdrawal[];
   notifications: Notification[];
   submissions: Submission[];
+}
+
+interface AppState extends UserAppData {
+  currentUserId: string | null;
+
+  loadUserData: (userId: string) => void;
+  clearUserData: () => void;
 
   setTasks: (tasks: Task[]) => void;
   setMyTasks: (tasks: Task[]) => void;
@@ -22,10 +37,17 @@ interface AppState {
   addNotification: (n: Omit<Notification, 'id' | 'createdAt' | 'isRead'>) => void;
   markAllNotificationsRead: () => void;
   markNotificationRead: (id: string) => void;
-  reviewTaskSubmission: (taskId: string, submissionId: string, action: 'approve' | 'reject', note?: string) => void;
+  reviewTaskSubmission: (
+    taskId: string,
+    submissionId: string,
+    action: 'approve' | 'reject',
+    note?: string
+  ) => void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
+const STORAGE_PREFIX = 'engagepay-user-data:';
+
+const defaultUserData = (): UserAppData => ({
   tasks: [...mockTasks],
   myTasks: [],
   activity: [],
@@ -42,53 +64,109 @@ export const useAppStore = create<AppState>((set) => ({
       createdAt: new Date().toISOString(),
     },
   ],
+});
 
-  setTasks: (tasks) => set({ tasks }),
-  setMyTasks: (tasks) => set({ myTasks: tasks }),
+// ── Persistence helpers ──
+function loadFromStorage(userId: string): UserAppData {
+  try {
+    const raw = localStorage.getItem(STORAGE_PREFIX + userId);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // fall through to default
+  }
+  return defaultUserData();
+}
 
-  addTask: (task) =>
-    set((state) => ({
-      myTasks: [task, ...state.myTasks],
-      tasks: [task, ...state.tasks],
-    })),
+function saveToStorage(userId: string | null, data: UserAppData) {
+  if (!userId) return;
+  try {
+    localStorage.setItem(STORAGE_PREFIX + userId, JSON.stringify(data));
+  } catch {
+    // localStorage full or unavailable — fail silently for demo purposes
+  }
+}
 
-  pushActivity: (msg, type = 'violet') =>
-    set((state) => ({
-      activity: [
-        { id: crypto.randomUUID(), msg, type, time: new Date().toLocaleTimeString() },
-        ...state.activity,
-      ].slice(0, 20),
-    })),
+export const useAppStore = create<AppState>((set, get) => {
+  const persistCurrent = (partial: Partial<UserAppData>) => {
+    set(partial);
+    const state = get();
+    saveToStorage(state.currentUserId, {
+      tasks: state.tasks,
+      myTasks: state.myTasks,
+      activity: state.activity,
+      transactions: state.transactions,
+      withdrawals: state.withdrawals,
+      notifications: state.notifications,
+      submissions: state.submissions,
+    });
+  };
 
-  updateTaskStatus: (taskId, status) => {
-    let updatedTask: Task | undefined;
-    set((state) => {
+  return {
+    currentUserId: null,
+    ...defaultUserData(),
+
+    loadUserData: (userId) => {
+      const data = loadFromStorage(userId);
+      set({ currentUserId: userId, ...data });
+    },
+
+    clearUserData: () => {
+      set({ currentUserId: null, ...defaultUserData() });
+    },
+
+    setTasks: (tasks) => persistCurrent({ tasks }),
+    setMyTasks: (tasks) => persistCurrent({ myTasks: tasks }),
+
+    addTask: (task) => {
+      const state = get();
+      persistCurrent({
+        myTasks: [task, ...state.myTasks],
+        tasks: [task, ...state.tasks],
+      });
+    },
+
+    pushActivity: (msg, type = 'violet') => {
+      const state = get();
+      persistCurrent({
+        activity: [
+          { id: crypto.randomUUID(), msg, type, time: new Date().toLocaleTimeString() },
+          ...state.activity,
+        ].slice(0, 20),
+      });
+    },
+
+    updateTaskStatus: (taskId, status) => {
+      const state = get();
+      let updatedTask: Task | undefined;
+
       const update = (list: Task[]) =>
         list.map((t) => {
           if (t.id !== taskId) return t;
           updatedTask = { ...t, status };
           return updatedTask;
         });
-      return {
+
+      persistCurrent({
         myTasks: update(state.myTasks),
         tasks: update(state.tasks),
-      };
-    });
-    return updatedTask;
-  },
+      });
 
-  addTransaction: (tx) =>
-    set((state) => ({
-      transactions: [
-        { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...tx },
-        ...state.transactions,
-      ],
-    })),
+      return updatedTask;
+    },
 
-  completeTask: (taskId, proof) => {
-    let updatedTask: Task | undefined;
+    addTransaction: (tx) => {
+      const state = get();
+      persistCurrent({
+        transactions: [
+          { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...tx },
+          ...state.transactions,
+        ],
+      });
+    },
 
-    set((state) => {
+    completeTask: (taskId, proof) => {
+      const state = get();
+      let updatedTask: Task | undefined;
       const task = state.tasks.find((t) => t.id === taskId);
 
       const newTaskSubmission: TaskSubmission = {
@@ -127,56 +205,64 @@ export const useAppStore = create<AppState>((set) => ({
         createdAt: new Date().toISOString(),
       };
 
-      return {
+      persistCurrent({
         tasks: update(state.tasks),
         myTasks: update(state.myTasks),
         submissions: [newSubmission, ...state.submissions],
-      };
-    });
+      });
 
-    return updatedTask;
-  },
+      return updatedTask;
+    },
 
-  addWithdrawal: (w) =>
-    set((state) => ({
-      withdrawals: [
-        {
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-          status: 'pending',
-          ...w,
-        },
-        ...state.withdrawals,
-      ],
-    })),
+    addWithdrawal: (w) => {
+      const state = get();
+      persistCurrent({
+        withdrawals: [
+          {
+            id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(),
+            status: 'pending',
+            ...w,
+          },
+          ...state.withdrawals,
+        ],
+      });
+    },
 
-  addNotification: (n) =>
-    set((state) => ({
-      notifications: [
-        {
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-          isRead: false,
-          ...n,
-        },
-        ...state.notifications,
-      ],
-    })),
+    addNotification: (n) => {
+      const state = get();
+      persistCurrent({
+        notifications: [
+          {
+            id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(),
+            isRead: false,
+            ...n,
+          },
+          ...state.notifications,
+        ],
+      });
+    },
 
-  markAllNotificationsRead: () =>
-    set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
-    })),
+    markAllNotificationsRead: () => {
+      const state = get();
+      persistCurrent({
+        notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
+      });
+    },
 
-  markNotificationRead: (id) =>
-    set((state) => ({
-      notifications: state.notifications.map((n) =>
-        n.id === id ? { ...n, isRead: true } : n
-      ),
-    })),
+    markNotificationRead: (id) => {
+      const state = get();
+      persistCurrent({
+        notifications: state.notifications.map((n) =>
+          n.id === id ? { ...n, isRead: true } : n
+        ),
+      });
+    },
 
-  reviewTaskSubmission: (taskId, submissionId, action, note) => {
-    set((state) => {
+    reviewTaskSubmission: (taskId, submissionId, action, note) => {
+      const state = get();
+
       const update = (list: Task[]) =>
         list.map((t) => {
           if (t.id !== taskId) return t;
@@ -184,7 +270,7 @@ export const useAppStore = create<AppState>((set) => ({
             if (s.id !== submissionId) return s;
             return {
               ...s,
-              status: action === 'approve' ? 'approved' as const : 'rejected' as const,
+              status: action === 'approve' ? ('approved' as const) : ('rejected' as const),
               reviewNote: note,
             };
           });
@@ -193,16 +279,15 @@ export const useAppStore = create<AppState>((set) => ({
             ...t,
             taskSubmissions: updatedSubmissions,
             slotsLeft,
-            completionCount: action === 'reject'
-              ? Math.max(0, t.completionCount - 1)
-              : t.completionCount,
+            completionCount:
+              action === 'reject' ? Math.max(0, t.completionCount - 1) : t.completionCount,
           };
         });
 
-      return {
+      persistCurrent({
         tasks: update(state.tasks),
         myTasks: update(state.myTasks),
-      };
-    });
-  },
-}));
+      });
+    },
+  };
+});

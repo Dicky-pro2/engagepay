@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { PLATFORM_ICONS } from '../../services/mockData';
 import { notify } from '../../utils/notify';
-import type { TaskSubmission } from '../../types';
+//import type { TaskSubmission } from '../../types';
 
 type StatusFilter = 'all' | 'approved' | 'pending' | 'rejected';
 

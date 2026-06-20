@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '../types';
+import { useAppStore } from './appStore';
 
 interface AuthState {
   user: User | null;
@@ -22,8 +23,10 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
 
-      login: (user, accessToken, refreshToken) =>
-        set({ user, accessToken, refreshToken, isAuthenticated: true }),
+      login: (user, accessToken, refreshToken) => {
+        set({ user, accessToken, refreshToken, isAuthenticated: true });
+        useAppStore.getState().loadUserData(user.id);
+      },
 
       setTokens: (accessToken, refreshToken) =>
         set({ accessToken, refreshToken, isAuthenticated: true }),
@@ -38,13 +41,15 @@ export const useAuthStore = create<AuthState>()(
           user: state.user ? { ...state.user, name } : state.user,
         })),
 
-      logout: () =>
+      logout: () => {
         set({
           user: null,
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
-        }),
+        });
+        useAppStore.getState().clearUserData();
+      },
     }),
     {
       name: 'engagepay-auth',
@@ -54,6 +59,13 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        // When the page reloads and auth restores from localStorage,
+        // also reload that user's app data.
+        if (state?.user?.id) {
+          useAppStore.getState().loadUserData(state.user.id);
+        }
+      },
     }
   )
 );

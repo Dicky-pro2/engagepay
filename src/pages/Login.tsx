@@ -35,7 +35,8 @@ export default function Login() {
 
     // Mock: email containing "adv" = advertiser, else earner
     const role = form.email.includes('adv') ? 'advertiser' : 'earner';
-    const user = { ...mockUsers[role], email: form.email };
+    const base = mockUsers[role];
+    const user = { ...base, id: `user_${form.email.toLowerCase()}`, email: form.email };
 
     login(user, 'mock_access_token', 'mock_refresh_token');
     notify.success(`Welcome back, ${user.name}!`);
@@ -46,7 +47,8 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 700));
-    const user = { ...mockUsers.earner, name: 'Google User', email: 'googleuser@gmail.com' };
+    const email = 'googleuser@gmail.com';
+    const user = { ...mockUsers.earner, name: 'Google User', email, id: `user_${email.toLowerCase()}` };
     login(user, 'mock_access_token', 'mock_refresh_token');
     notify.success('Signed in with Google!');
     setLoading(false);

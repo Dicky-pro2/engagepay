@@ -43,6 +43,7 @@ export default function Signup() {
     const base = mockUsers[role];
     const user = {
       ...base,
+      id: `user_${form.email.toLowerCase()}`,
       name: form.name,
       email: form.email,
       role,
@@ -62,9 +63,11 @@ export default function Signup() {
   const handleGoogleSignup = async () => {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 700));
+    const email = 'googleuser@gmail.com';
     const base = mockUsers[role];
     const user = {
       ...base,
+      id: `user_${email}`,
       name: 'Google User',
       email: 'googleuser@gmail.com',
       role,

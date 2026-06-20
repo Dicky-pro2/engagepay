@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Mail,
   ShieldCheck,
@@ -10,24 +10,26 @@ import {
   Wallet as WalletIcon,
   ListChecks,
   Star,
-} from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
-import { useAppStore } from '../store/appStore';
-import { notify } from '../utils/notify';
+} from "lucide-react";
+import { useAuthStore } from "../store/authStore";
+import { useAppStore } from "../store/appStore";
+import { notify } from "../utils/notify";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const { user, updateName, logout } = useAuthStore();
-  const { transactions, submissions, myTasks } = useAppStore();
+  const { transactions, submissions, myTasks} = useAppStore();
+  const navigate = useNavigate();
 
   const [editingName, setEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState(user?.name ?? '');
+  const [nameInput, setNameInput] = useState(user?.name ?? "");
   const [savingName, setSavingName] = useState(false);
 
-  const isAdvertiser = user?.role === 'advertiser';
+  const isAdvertiser = user?.role === "advertiser";
 
   const handleSaveName = async () => {
     if (!nameInput.trim()) {
-      notify.error('Name cannot be empty');
+      notify.error("Name cannot be empty");
       return;
     }
     if (nameInput.trim() === user?.name) {
@@ -37,18 +39,18 @@ export default function Profile() {
     setSavingName(true);
     await new Promise((r) => setTimeout(r, 500));
     updateName(nameInput.trim());
-    notify.success('Name updated successfully!');
+    notify.success("Name updated successfully!");
     setSavingName(false);
     setEditingName(false);
   };
 
   const handleCancelEdit = () => {
-    setNameInput(user?.name ?? '');
+    setNameInput(user?.name ?? "");
     setEditingName(false);
   };
 
   const totalTransactions = transactions.length;
-  const memberSince = user ? 'June 2026' : '—';
+  const memberSince = user ? "June 2026" : "—";
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -65,12 +67,14 @@ export default function Profile() {
       >
         <div className="flex items-start gap-4">
           {/* Avatar placeholder */}
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-sora font-bold flex-shrink-0 ${
-            isAdvertiser
-              ? 'bg-violet/20 text-violet-light'
-              : 'bg-emerald2/20 text-emerald2'
-          }`}>
-            {user?.name?.charAt(0).toUpperCase() ?? '?'}
+          <div
+            className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-sora font-bold flex-shrink-0 ${
+              isAdvertiser
+                ? "bg-violet/20 text-violet-light"
+                : "bg-emerald2/20 text-emerald2"
+            }`}
+          >
+            {user?.name?.charAt(0).toUpperCase() ?? "?"}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -83,8 +87,8 @@ export default function Profile() {
                   onChange={(e) => setNameInput(e.target.value)}
                   autoFocus
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveName();
-                    if (e.key === 'Escape') handleCancelEdit();
+                    if (e.key === "Enter") handleSaveName();
+                    if (e.key === "Escape") handleCancelEdit();
                   }}
                 />
                 <button
@@ -122,12 +126,14 @@ export default function Profile() {
 
             {/* Role + verified badges */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-                isAdvertiser
-                  ? 'bg-violet/10 border-violet/30 text-violet-light'
-                  : 'bg-emerald2/10 border-emerald2/30 text-emerald2'
-              }`}>
-                {isAdvertiser ? '📢 Advertiser' : '💰 Earner'}
+              <span
+                className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                  isAdvertiser
+                    ? "bg-violet/10 border-violet/30 text-violet-light"
+                    : "bg-emerald2/10 border-emerald2/30 text-emerald2"
+                }`}
+              >
+                {isAdvertiser ? "📢 Advertiser" : "💰 Earner"}
               </span>
               {user?.isEmailVerified && (
                 <span className="flex items-center gap-1 text-xs text-emerald2 bg-emerald2/10 border border-emerald2/30 px-2.5 py-1 rounded-full font-semibold">
@@ -237,27 +243,38 @@ export default function Profile() {
       <div>
         <h2 className="font-sora font-bold text-base mb-3">🔐 Account Info</h2>
         <div className="card divide-y divide-border">
-          <InfoRow label="Email" value={user?.email ?? '—'} />
-          <InfoRow label="Role" value={isAdvertiser ? 'Advertiser' : 'Earner'} />
+          <InfoRow label="Email" value={user?.email ?? "—"} />
+          <InfoRow
+            label="Role"
+            value={isAdvertiser ? "Advertiser" : "Earner"}
+          />
           <InfoRow label="Member Since" value={memberSince} />
           <InfoRow
             label="Email Verified"
-            value={user?.isEmailVerified ? '✅ Verified' : '❌ Not verified'}
+            value={user?.isEmailVerified ? "✅ Verified" : "❌ Not verified"}
           />
         </div>
       </div>
 
       {/* Danger zone */}
       <div>
-        <h2 className="font-sora font-bold text-base mb-3">⚠️ Account Actions</h2>
+        <h2 className="font-sora font-bold text-base mb-3">
+          ⚠️ Account Actions
+        </h2>
         <div className="card p-5 space-y-3">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <div className="text-sm font-semibold">Log out</div>
-              <div className="text-xs text-slatec">Sign out of your account on this device.</div>
+              <div className="text-xs text-slatec">
+                Sign out of your account on this device.
+              </div>
             </div>
             <button
-              onClick={() => { logout(); }}
+              onClick={() => {
+                logout();
+                notify.info("Logged out successfully");
+                navigate("/");
+              }}
               className="border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-xl px-4 py-2 text-sm font-semibold transition-all"
             >
               Log Out
