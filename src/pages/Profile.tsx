@@ -1,56 +1,37 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  Mail,
-  ShieldCheck,
-  Pencil,
-  Check,
-  X,
-  TrendingUp,
-  Wallet as WalletIcon,
-  ListChecks,
-  Star,
-} from "lucide-react";
-import { useAuthStore } from "../store/authStore";
-import { useAppStore } from "../store/appStore";
-import { notify } from "../utils/notify";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Icons } from '../components/icons/Icons';
+import { useAuthStore } from '../store/authStore';
+import { useAppStore } from '../store/appStore';
+import { notify } from '../utils/notify';
 
 export default function Profile() {
   const { user, updateName, logout } = useAuthStore();
-  const { transactions, submissions, myTasks} = useAppStore();
+  const { transactions, submissions, myTasks } = useAppStore();
   const navigate = useNavigate();
 
   const [editingName, setEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState(user?.name ?? "");
+  const [nameInput, setNameInput] = useState(user?.name ?? '');
   const [savingName, setSavingName] = useState(false);
 
-  const isAdvertiser = user?.role === "advertiser";
+  const isAdvertiser = user?.role === 'advertiser';
 
   const handleSaveName = async () => {
-    if (!nameInput.trim()) {
-      notify.error("Name cannot be empty");
-      return;
-    }
-    if (nameInput.trim() === user?.name) {
-      setEditingName(false);
-      return;
-    }
+    if (!nameInput.trim()) { notify.error('Name cannot be empty'); return; }
+    if (nameInput.trim() === user?.name) { setEditingName(false); return; }
     setSavingName(true);
     await new Promise((r) => setTimeout(r, 500));
     updateName(nameInput.trim());
-    notify.success("Name updated successfully!");
+    notify.success('Name updated successfully!');
     setSavingName(false);
     setEditingName(false);
   };
 
   const handleCancelEdit = () => {
-    setNameInput(user?.name ?? "");
+    setNameInput(user?.name ?? '');
     setEditingName(false);
   };
-
-  const totalTransactions = transactions.length;
-  const memberSince = user ? "June 2026" : "—";
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -59,26 +40,20 @@ export default function Profile() {
         <p className="text-slatec text-sm">Manage your account details.</p>
       </div>
 
-      {/* Avatar + name card */}
+      {/* Avatar + name */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="card p-6"
       >
         <div className="flex items-start gap-4">
-          {/* Avatar placeholder */}
-          <div
-            className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-sora font-bold flex-shrink-0 ${
-              isAdvertiser
-                ? "bg-violet/20 text-violet-light"
-                : "bg-emerald2/20 text-emerald2"
-            }`}
-          >
-            {user?.name?.charAt(0).toUpperCase() ?? "?"}
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-sora font-bold flex-shrink-0 ${
+            isAdvertiser ? 'bg-violet/20 text-violet-light' : 'bg-emerald2/20 text-emerald2'
+          }`}>
+            {user?.name?.charAt(0).toUpperCase() ?? '?'}
           </div>
 
           <div className="flex-1 min-w-0">
-            {/* Name with edit */}
             {editingName ? (
               <div className="flex items-center gap-2 mb-1">
                 <input
@@ -87,8 +62,8 @@ export default function Profile() {
                   onChange={(e) => setNameInput(e.target.value)}
                   autoFocus
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSaveName();
-                    if (e.key === "Escape") handleCancelEdit();
+                    if (e.key === 'Enter') handleSaveName();
+                    if (e.key === 'Escape') handleCancelEdit();
                   }}
                 />
                 <button
@@ -96,13 +71,13 @@ export default function Profile() {
                   disabled={savingName}
                   className="text-emerald2 hover:text-emerald-400 transition-colors flex-shrink-0"
                 >
-                  <Check size={18} />
+                  <Icons.Confirm size={18} />
                 </button>
                 <button
                   onClick={handleCancelEdit}
                   className="text-slatec hover:text-red-400 transition-colors flex-shrink-0"
                 >
-                  <X size={18} />
+                  <Icons.Close size={18} />
                 </button>
               </div>
             ) : (
@@ -111,33 +86,28 @@ export default function Profile() {
                 <button
                   onClick={() => setEditingName(true)}
                   className="text-slatec hover:text-white transition-colors"
-                  title="Edit name"
                 >
-                  <Pencil size={14} />
+                  <Icons.Edit size={14} />
                 </button>
               </div>
             )}
 
-            {/* Email */}
             <div className="flex items-center gap-1.5 text-sm text-slatec mb-2">
-              <Mail size={13} />
+              <Icons.Mail size={13} />
               {user?.email}
             </div>
 
-            {/* Role + verified badges */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-                  isAdvertiser
-                    ? "bg-violet/10 border-violet/30 text-violet-light"
-                    : "bg-emerald2/10 border-emerald2/30 text-emerald2"
-                }`}
-              >
-                {isAdvertiser ? "📢 Advertiser" : "💰 Earner"}
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                isAdvertiser
+                  ? 'bg-violet/10 border-violet/30 text-violet-light'
+                  : 'bg-emerald2/10 border-emerald2/30 text-emerald2'
+              }`}>
+                {isAdvertiser ? '📢 Advertiser' : '💰 Earner'}
               </span>
               {user?.isEmailVerified && (
                 <span className="flex items-center gap-1 text-xs text-emerald2 bg-emerald2/10 border border-emerald2/30 px-2.5 py-1 rounded-full font-semibold">
-                  <ShieldCheck size={12} /> Verified
+                  <Icons.Verified size={12} /> Verified
                 </span>
               )}
             </div>
@@ -145,18 +115,13 @@ export default function Profile() {
         </div>
       </motion.div>
 
-      {/* Stats grid */}
+      {/* Stats */}
       <div>
         <h2 className="font-sora font-bold text-base mb-3">📊 Account Stats</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="stat-card"
-          >
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="stat-card">
             <div className="flex items-center gap-1.5 text-xs text-slatec uppercase tracking-wide mb-1">
-              <WalletIcon size={12} /> Balance
+              <Icons.Wallet size={12} /> Balance
             </div>
             <div className="font-sora font-bold text-xl text-amber-400">
               🪙 {(user?.walletBalance ?? 0).toLocaleString()}
@@ -165,76 +130,41 @@ export default function Profile() {
 
           {isAdvertiser ? (
             <>
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="stat-card"
-              >
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="stat-card">
                 <div className="flex items-center gap-1.5 text-xs text-slatec uppercase tracking-wide mb-1">
-                  <ListChecks size={12} /> Tasks Posted
+                  <Icons.Tasks size={12} /> Tasks Posted
                 </div>
-                <div className="font-sora font-bold text-xl text-violet-light">
-                  {myTasks.length}
-                </div>
+                <div className="font-sora font-bold text-xl text-violet-light">{myTasks.length}</div>
               </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="stat-card"
-              >
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="stat-card">
                 <div className="flex items-center gap-1.5 text-xs text-slatec uppercase tracking-wide mb-1">
-                  <TrendingUp size={12} /> Coins Spent
+                  <Icons.Trending size={12} /> Coins Spent
                 </div>
-                <div className="font-sora font-bold text-xl">
-                  🪙 {(user?.totalSpent ?? 0).toLocaleString()}
-                </div>
+                <div className="font-sora font-bold text-xl">🪙 {(user?.totalSpent ?? 0).toLocaleString()}</div>
               </motion.div>
             </>
           ) : (
             <>
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="stat-card"
-              >
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="stat-card">
                 <div className="flex items-center gap-1.5 text-xs text-slatec uppercase tracking-wide mb-1">
-                  <Star size={12} /> Tasks Done
+                  <Icons.Star size={12} /> Tasks Done
                 </div>
-                <div className="font-sora font-bold text-xl text-violet-light">
-                  {submissions.length}
-                </div>
+                <div className="font-sora font-bold text-xl text-violet-light">{submissions.length}</div>
               </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="stat-card"
-              >
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="stat-card">
                 <div className="flex items-center gap-1.5 text-xs text-slatec uppercase tracking-wide mb-1">
-                  <TrendingUp size={12} /> Total Earned
+                  <Icons.Trending size={12} /> Total Earned
                 </div>
-                <div className="font-sora font-bold text-xl text-emerald2">
-                  🪙 {(user?.totalEarned ?? 0).toLocaleString()}
-                </div>
+                <div className="font-sora font-bold text-xl text-emerald2">🪙 {(user?.totalEarned ?? 0).toLocaleString()}</div>
               </motion.div>
             </>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="stat-card"
-          >
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="stat-card">
             <div className="flex items-center gap-1.5 text-xs text-slatec uppercase tracking-wide mb-1">
-              <TrendingUp size={12} /> Transactions
+              <Icons.Trending size={12} /> Transactions
             </div>
-            <div className="font-sora font-bold text-xl">
-              {totalTransactions}
-            </div>
+            <div className="font-sora font-bold text-xl">{transactions.length}</div>
           </motion.div>
         </div>
       </div>
@@ -243,41 +173,27 @@ export default function Profile() {
       <div>
         <h2 className="font-sora font-bold text-base mb-3">🔐 Account Info</h2>
         <div className="card divide-y divide-border">
-          <InfoRow label="Email" value={user?.email ?? "—"} />
-          <InfoRow
-            label="Role"
-            value={isAdvertiser ? "Advertiser" : "Earner"}
-          />
-          <InfoRow label="Member Since" value={memberSince} />
-          <InfoRow
-            label="Email Verified"
-            value={user?.isEmailVerified ? "✅ Verified" : "❌ Not verified"}
-          />
+          <InfoRow label="Email" value={user?.email ?? '—'} />
+          <InfoRow label="Role" value={isAdvertiser ? 'Advertiser' : 'Earner'} />
+          <InfoRow label="Member Since" value="June 2026" />
+          <InfoRow label="Email Verified" value={user?.isEmailVerified ? '✅ Verified' : '❌ Not verified'} />
         </div>
       </div>
 
       {/* Danger zone */}
       <div>
-        <h2 className="font-sora font-bold text-base mb-3">
-          ⚠️ Account Actions
-        </h2>
-        <div className="card p-5 space-y-3">
+        <h2 className="font-sora font-bold text-base mb-3">⚠️ Account Actions</h2>
+        <div className="card p-5">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <div className="text-sm font-semibold">Log out</div>
-              <div className="text-xs text-slatec">
-                Sign out of your account on this device.
-              </div>
+              <div className="text-xs text-slatec">Sign out of your account on this device.</div>
             </div>
             <button
-              onClick={() => {
-                logout();
-                notify.info("Logged out successfully");
-                navigate("/");
-              }}
-              className="border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-xl px-4 py-2 text-sm font-semibold transition-all"
+              onClick={() => { logout(); notify.info('Logged out successfully'); navigate('/'); }}
+              className="border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-xl px-4 py-2 text-sm font-semibold transition-all flex items-center gap-2"
             >
-              Log Out
+              <Icons.Logout size={15} /> Log Out
             </button>
           </div>
         </div>

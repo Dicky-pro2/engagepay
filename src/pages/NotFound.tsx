@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, ArrowLeft } from 'lucide-react';
+import { Icons } from '../components/icons/Icons';
 import { useAuthStore } from '../store/authStore';
 
 export default function NotFound() {
@@ -9,7 +9,6 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Background orbs */}
       <div className="absolute w-[500px] h-[500px] bg-violet/10 rounded-full blur-[100px] -top-32 -left-32 pointer-events-none" />
       <div className="absolute w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] -bottom-24 -right-24 pointer-events-none" />
 
@@ -18,7 +17,6 @@ export default function NotFound() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center relative z-10 max-w-md"
       >
-        {/* 404 display */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -38,18 +36,17 @@ export default function NotFound() {
             onClick={() => navigate(-1)}
             className="btn-secondary flex items-center gap-2 w-full sm:w-auto justify-center"
           >
-            <ArrowLeft size={16} /> Go Back
+            <Icons.ArrowLeft size={16} /> Go Back
           </button>
           <button
             onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')}
             className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center"
           >
-            <Home size={16} />
+            <Icons.Home size={16} />
             {isAuthenticated ? 'Dashboard' : 'Home'}
           </button>
         </div>
 
-        {/* Brand */}
         <div className="mt-10 font-sora font-extrabold text-lg text-slatec/40">
           Engage<span className="text-violet-light/40">Pay</span>
         </div>

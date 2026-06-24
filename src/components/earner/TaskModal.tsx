@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Icons } from '../icons/Icons';
 import { useAuthStore } from '../../store/authStore';
 import { useAppStore } from '../../store/appStore';
 import { notify } from '../../utils/notify';
@@ -66,7 +66,7 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
               onClick={onClose}
               className="absolute top-4 right-4 text-slatec hover:text-white transition-colors"
             >
-              <X size={20} />
+              <Icons.Close size={20} />
             </button>
 
             <h2 className="font-sora font-bold text-xl mb-1">
@@ -82,7 +82,7 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
               {task.instructions}
               <br />
               
-               <a
+              <a
                 href={task.url}
                 target="_blank"
                 rel="noreferrer"
@@ -110,7 +110,7 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
                 onClick={handleSubmit}
                 className="btn-green flex-1 flex items-center justify-center gap-1.5"
               >
-                ✅ Submit & Earn
+                <Icons.Confirm size={16} /> Submit & Earn
               </button>
             </div>
           </motion.div>

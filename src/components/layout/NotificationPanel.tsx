@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, CheckCheck } from 'lucide-react';
+import { Icons } from '../icons/Icons';
 import { useAppStore } from '../../store/appStore';
 
 const TYPE_ICONS: Record<string, string> = {
@@ -21,7 +21,6 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
   const { notifications, markAllNotificationsRead, markNotificationRead } = useAppStore();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -41,7 +40,6 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
       transition={{ duration: 0.15 }}
       className="absolute right-0 top-full mt-2 w-80 sm:w-96 card z-50 overflow-hidden"
     >
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <span className="font-sora font-bold text-sm">Notifications</span>
         <div className="flex items-center gap-2">
@@ -50,19 +48,18 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
               onClick={markAllNotificationsRead}
               className="text-xs text-violet-light hover:text-white flex items-center gap-1 transition-colors"
             >
-              <CheckCheck size={14} /> Mark all read
+              <Icons.MarkAllRead size={14} /> Mark all read
             </button>
           )}
           <button
             onClick={onClose}
             className="text-slatec hover:text-white transition-colors"
           >
-            <X size={16} />
+            <Icons.Close size={16} />
           </button>
         </div>
       </div>
 
-      {/* List */}
       <div className="max-h-96 overflow-y-auto">
         {notifications.length === 0 ? (
           <div className="text-center py-10 text-slatec">

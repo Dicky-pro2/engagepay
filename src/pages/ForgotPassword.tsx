@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, ArrowLeft } from 'lucide-react';
+import { Icons } from '../components/icons/Icons';
 import { notify } from '../utils/notify';
 import { AuthShell, LoadingSpinner } from './Login';
 
@@ -20,8 +20,11 @@ export default function ForgotPassword() {
 
   return (
     <AuthShell>
-      <Link to="/login" className="flex items-center gap-1.5 text-slatec hover:text-white text-sm mb-6 transition-colors">
-        <ArrowLeft size={16} /> Back to login
+      <Link
+        to="/login"
+        className="flex items-center gap-1.5 text-slatec hover:text-white text-sm mb-6 transition-colors"
+      >
+        <Icons.ArrowLeft size={16} /> Back to login
       </Link>
 
       {sent ? (
@@ -29,8 +32,9 @@ export default function ForgotPassword() {
           <div className="text-4xl mb-3">📬</div>
           <h2 className="font-sora font-bold text-xl mb-2">Check your email</h2>
           <p className="text-slatec text-sm">
-            We sent a password reset link to <strong className="text-white">{email}</strong>.
-            (This is a demo — no real email is sent.)
+            We sent a reset link to{' '}
+            <strong className="text-white">{email}</strong>.{' '}
+            (Demo — no real email sent.)
           </p>
         </div>
       ) : (
@@ -43,7 +47,10 @@ export default function ForgotPassword() {
             <div>
               <label className="label">Email</label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none" />
+                <Icons.Mail
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none"
+                />
                 <input
                   type="email"
                   className="input pl-10"

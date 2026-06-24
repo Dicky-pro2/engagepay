@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Icons } from '../components/icons/Icons';
 import { useAuthStore } from '../store/authStore';
 import { mockUsers } from '../services/mockData';
 import { notify } from '../utils/notify';
@@ -33,7 +33,6 @@ export default function Login() {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 700));
 
-    // Mock: email containing "adv" = advertiser, else earner
     const role = form.email.includes('adv') ? 'advertiser' : 'earner';
     const base = mockUsers[role];
     const user = { ...base, id: `user_${form.email.toLowerCase()}`, email: form.email };
@@ -48,7 +47,7 @@ export default function Login() {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 700));
     const email = 'googleuser@gmail.com';
-    const user = { ...mockUsers.earner, name: 'Google User', email, id: `user_${email.toLowerCase()}` };
+    const user = { ...mockUsers.earner, id: `user_${email}`, name: 'Google User', email };
     login(user, 'mock_access_token', 'mock_refresh_token');
     notify.success('Signed in with Google!');
     setLoading(false);
@@ -58,11 +57,8 @@ export default function Login() {
   return (
     <AuthShell>
       <h1 className="font-sora font-bold text-2xl mb-1">Welcome back</h1>
-      <p className="text-slatec text-sm mb-6">
-        Log in to continue earning or advertising.
-      </p>
+      <p className="text-slatec text-sm mb-6">Log in to continue earning or advertising.</p>
 
-      {/* Google button */}
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
@@ -78,11 +74,10 @@ export default function Login() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Email */}
         <div>
           <label className="label">Email</label>
           <div className="relative">
-            <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none" />
+            <Icons.Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none" />
             <input
               type="email"
               className="input pl-10"
@@ -94,11 +89,10 @@ export default function Login() {
           {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
         </div>
 
-        {/* Password */}
         <div>
           <label className="label">Password</label>
           <div className="relative">
-            <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none" />
+            <Icons.Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none" />
             <input
               type={showPassword ? 'text' : 'password'}
               className="input pl-10 pr-10"
@@ -111,7 +105,7 @@ export default function Login() {
               onClick={() => setShowPassword((v) => !v)}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slatec hover:text-white transition-colors"
             >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              {showPassword ? <Icons.EyeOff size={16} /> : <Icons.Eye size={16} />}
             </button>
           </div>
           {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
@@ -132,7 +126,7 @@ export default function Login() {
               <LoadingSpinner /> Signing in...
             </span>
           ) : (
-            <>Sign In <ArrowRight size={18} /></>
+            <>Sign In <Icons.ArrowRight size={18} /></>
           )}
         </button>
       </form>
@@ -145,19 +139,17 @@ export default function Login() {
       </p>
 
       <p className="text-center text-xs text-slatec/60 mt-3 leading-relaxed">
-        Demo tip: use an email with "adv" (e.g. adv@test.com) to log in as Advertiser, anything else logs in as Earner.
+        Demo tip: use an email with "adv" (e.g. adv@test.com) to log in as Advertiser.
       </p>
     </AuthShell>
   );
 }
 
-// ── Shared layout shell ──────────────────────────────────────────
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
       <div className="absolute w-[500px] h-[500px] bg-violet/15 rounded-full blur-[100px] -top-32 -left-32 pointer-events-none" />
       <div className="absolute w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] -bottom-24 -right-24 pointer-events-none" />
-
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -174,7 +166,6 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ── Reusable pieces ──────────────────────────────────────────────
 export function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48">
