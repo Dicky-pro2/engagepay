@@ -42,4 +42,9 @@ export {
   ExternalLink,
   CheckCheck,
   ShieldCheck,
+
+  //transaction types
+  CreditCard,
+  Rocket,
+  PiggyBank,
 } from 'lucide-react';

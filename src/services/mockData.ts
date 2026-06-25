@@ -1,17 +1,9 @@
 import type { User } from '../types';
 import type { Task } from '../types';
 
-export const PLATFORM_ICONS: Record<string, string> = {
-  Instagram: '📸',
-  'Twitter/X': '🐦',
-  TikTok: '🎵',
-  YouTube: '▶️',
-  Facebook: '👥',
-  LinkedIn: '💼',
-};
 
 export const TASK_TYPES = ['Follow', 'Like', 'Comment', 'Share', 'Subscribe', 'View'] as const;
-export const PLATFORMS = Object.keys(PLATFORM_ICONS);
+export const PLATFORMS = ['Instagram', 'Twitter/X', 'TikTok', 'YouTube', 'Facebook', 'LinkedIn'];
 
 export const mockUsers: Record<'advertiser' | 'earner', User> = {
   advertiser: {

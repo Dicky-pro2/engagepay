@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowDownCircle, ArrowUpCircle, Wallet as WalletIcon } from 'lucide-react';
+import { Icons } from '../icons/Icons';
 import { useAuthStore } from '../../store/authStore';
 import { useAppStore } from '../../store/appStore';
 import { notify } from '../../utils/notify';
@@ -8,13 +8,13 @@ import type { TransactionType } from '../../types';
 
 const FUND_AMOUNTS = [100, 500, 1000, 5000];
 
-const TX_LABELS: Record<TransactionType, { icon: string; color: string }> = {
-  deposit: { icon: '💳', color: 'text-emerald2' },
-  withdrawal: { icon: '💸', color: 'text-red-400' },
-  task_payment: { icon: '🚀', color: 'text-red-400' },
-  task_earning: { icon: '🎉', color: 'text-emerald2' },
-  refund: { icon: '↩️', color: 'text-violet-light' },
-  bonus: { icon: '🎁', color: 'text-amber-400' },
+const TX_META: Record<TransactionType, { icon: React.ReactNode; color: string; label: string }> = {
+  deposit: { icon: <Icons.CreditCard size={16} />, color: 'text-emerald2', label: 'Deposit' },
+  withdrawal: { icon: <Icons.CoinOut size={16} />, color: 'text-red-400', label: 'Withdrawal' },
+  task_payment: { icon: <Icons.Rocket size={16} />, color: 'text-red-400', label: 'Task Payment' },
+  task_earning: { icon: <Icons.Star size={16} />, color: 'text-emerald2', label: 'Task Earning' },
+  refund: { icon: <Icons.ArrowLeft size={16} />, color: 'text-violet-light', label: 'Refund' },
+  bonus: { icon: <Icons.PiggyBank size={16} />, color: 'text-amber-400', label: 'Bonus' },
 };
 
 export default function WalletPage() {
@@ -34,7 +34,7 @@ export default function WalletPage() {
     addTransaction({
       type: 'deposit',
       amount: amt,
-      description: 'Wallet top-up (mock payment)',
+      description: 'Wallet top-up',
     });
     notify.walletFunded(amt);
     setCustomAmt('');
@@ -54,20 +54,25 @@ export default function WalletPage() {
         className="card p-6 flex items-center justify-between flex-wrap gap-4"
       >
         <div>
-          <div className="text-xs text-slatec uppercase tracking-wide mb-1">Current Balance</div>
-          <div className="font-sora font-extrabold text-3xl sm:text-4xl text-amber-400">
-            {(user?.walletBalance ?? 0).toLocaleString()} 🪙
+          <div className="text-xs text-slatec uppercase tracking-wide mb-1">
+            Current Balance
           </div>
-        </div>
-        <div className="w-14 h-14 rounded-2xl bg-amber-500/15 flex items-center justify-center">
-          <WalletIcon size={26} className="text-amber-400" />
+          <div className="font-sora font-extrabold text-3xl sm:text-4xl text-amber-400 flex items-center gap-2">
+            <Icons.Wallet size={28} className="text-amber-400" />
+            {(user?.walletBalance ?? 0).toLocaleString()}
+            <span className="text-base font-normal text-slatec">coins</span>
+          </div>
         </div>
       </motion.div>
 
       {/* Fund wallet */}
       <div className="card p-5 max-w-md">
-        <h2 className="font-sora font-bold text-base mb-1">💳 Fund Wallet</h2>
-        <p className="text-slatec text-sm mb-4">Choose an amount to add to your wallet (demo — no real payment).</p>
+        <h2 className="font-sora font-bold text-base mb-1 flex items-center gap-2">
+          <Icons.CreditCard size={16} /> Fund Wallet
+        </h2>
+        <p className="text-slatec text-sm mb-4">
+          Choose an amount to add (demo — no real payment).
+        </p>
 
         <div className="flex gap-2 flex-wrap mb-3">
           {FUND_AMOUNTS.map((amt) => (
@@ -80,7 +85,7 @@ export default function WalletPage() {
                   : 'border-border text-slatec hover:border-white/20'
               }`}
             >
-              {amt.toLocaleString()} 🪙
+              {amt.toLocaleString()} coins
             </button>
           ))}
         </div>
@@ -94,36 +99,44 @@ export default function WalletPage() {
           onChange={(e) => setCustomAmt(e.target.value)}
         />
 
-        <button onClick={handleFund} className="btn-primary w-full font-sora">
-          Add Coins to Wallet
+        <button onClick={handleFund} className="btn-primary w-full font-sora flex items-center justify-center gap-2">
+          <Icons.CoinIn size={16} /> Add Coins to Wallet
         </button>
       </div>
 
       {/* Transaction history */}
       <div>
-        <h2 className="font-sora font-bold text-base mb-3">📜 Transaction History</h2>
+        <h2 className="font-sora font-bold text-base mb-3 flex items-center gap-2">
+          <Icons.Clock size={16} /> Transaction History
+        </h2>
         {transactions.length === 0 ? (
           <div className="card p-10 text-center text-slatec">
-            <div className="text-3xl mb-2">💼</div>
+            <Icons.Wallet size={32} className="mx-auto mb-2 opacity-30" />
             No transactions yet
           </div>
         ) : (
           <div className="card divide-y divide-border">
             {transactions.map((tx) => {
-              const meta = TX_LABELS[tx.type];
+              const meta = TX_META[tx.type];
               const isCredit = tx.amount > 0;
               return (
                 <div key={tx.id} className="flex items-center gap-3 px-4 sm:px-5 py-3">
-                  <div className="w-9 h-9 rounded-xl bg-navy-2 flex items-center justify-center text-base flex-shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-navy-2 flex items-center justify-center flex-shrink-0">
                     {meta.icon}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{tx.description}</div>
-                    <div className="text-xs text-slatec">{new Date(tx.createdAt).toLocaleString()}</div>
+                    <div className="text-xs text-slatec">
+                      {new Date(tx.createdAt).toLocaleString()}
+                    </div>
                   </div>
                   <div className={`font-sora font-bold text-sm flex items-center gap-1 ${meta.color}`}>
-                    {isCredit ? <ArrowDownCircle size={14} /> : <ArrowUpCircle size={14} />}
-                    {isCredit ? '+' : ''}{tx.amount.toLocaleString()} 🪙
+                    {isCredit
+                      ? <Icons.CoinIn size={14} />
+                      : <Icons.CoinOut size={14} />
+                    }
+                    {isCredit ? '+' : ''}{tx.amount.toLocaleString()}
+                    <span className="text-xs font-normal text-slatec">coins</span>
                   </div>
                 </div>
               );

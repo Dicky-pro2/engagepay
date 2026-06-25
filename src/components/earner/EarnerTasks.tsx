@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appStore';
-import { PLATFORM_ICONS, PLATFORMS, TASK_TYPES } from '../../services/mockData';
 import EarnTaskCard from './EarnTaskCard';
 import TaskModal from './TaskModal';
 import type { Task } from '../../types';
+import { PlatformIcon } from '../icons/PlatformIcons';
 
 type PlatformFilter = 'all' | string;
 type TypeFilter = 'all' | string;
+
+const PLATFORMS = ['Instagram', 'TikTok', 'YouTube', 'Facebook'];
+const TASK_TYPES = ['Follow', 'Like', 'Comment', 'Share', 'Subscribe'];
 
 export default function EarnerTasks() {
   const tasks = useAppStore((s) => s.tasks);
@@ -43,7 +46,8 @@ export default function EarnerTasks() {
           </FilterChip>
           {PLATFORMS.map((p) => (
             <FilterChip key={p} active={platformFilter === p} onClick={() => setPlatformFilter(p)}>
-              {PLATFORM_ICONS[p]} {p}
+              <PlatformIcon platform={p} size={15} className="opacity-80" />
+              {p}
             </FilterChip>
           ))}
         </div>

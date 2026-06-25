@@ -67,7 +67,12 @@ export default function DashboardLayout() {
                 ? 'bg-violet/10 border-violet/30 text-violet-light'
                 : 'bg-emerald2/10 border-emerald2/30 text-emerald2'
             }`}>
-              {isAdvertiser ? '📢 Advertiser' : '💰 Earner'}
+              <span className="flex items-center gap-1">  
+                {isAdvertiser 
+                  ? <> <Icons.Advertiser size={13} /> Advertiser </>
+                  : <> <Icons.Earner size={13} /> Earner </>
+                }
+              </span>
             </div>
 
             <div className="bg-card border border-border rounded-full px-3 sm:px-4 py-1.5 text-sm font-semibold flex items-center gap-1.5">

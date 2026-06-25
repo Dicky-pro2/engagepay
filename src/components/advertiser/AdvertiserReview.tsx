@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icons } from '../icons/Icons';
 import { useAppStore } from '../../store/appStore';
-import { PLATFORM_ICONS } from '../../services/mockData';
+//import { PLATFORM_ICONS } from '../../services/mockData';
 import { notify } from '../../utils/notify';
+import { PlatformIcon } from '../icons/PlatformIcons';
 //import type { TaskSubmission } from '../../types';
 
 type StatusFilter = 'all' | 'approved' | 'pending' | 'rejected';
@@ -123,7 +124,7 @@ export default function AdvertiserReview() {
             >
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-navy-2 flex items-center justify-center text-lg flex-shrink-0">
-                  {PLATFORM_ICONS[sub.task.platform] ?? '📱'}
+                  <PlatformIcon platform={sub.task.platform} size={22} /> 
                 </div>
 
                 <div className="flex-1 min-w-0 space-y-2">

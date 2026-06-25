@@ -1,67 +1,72 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ArrowDownCircle,
-  ArrowUpCircle,
-  CheckCircle,
-  Clock,
-  XCircle,
-} from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useAppStore } from "../../store/appStore";
 import { notify } from "../../utils/notify";
+import { Icons } from "../icons/Icons";
 import type { WithdrawalMethod, TransactionType } from "../../types";
 
 const METHODS: {
   key: WithdrawalMethod;
   label: string;
-  icon: string;
+  icon: React.ReactNode;
   placeholder: string;
 }[] = [
   {
     key: "bank_transfer",
     label: "Bank Transfer",
-    icon: "🏦",
+    icon: <Icons.Banknote size={18} />,
     placeholder: "Bank name, account number, account name",
   },
   {
     key: "mobile_money",
     label: "Mobile Money",
-    icon: "📱",
+    icon: <Icons.Send size={18} />,
     placeholder: "Phone number and provider (e.g. MTN, Airtel)",
   },
   {
     key: "paypal",
     label: "PayPal",
-    icon: "💳",
+    icon: <Icons.CreditCard size={18} />,
     placeholder: "Your PayPal email address",
   },
   {
     key: "crypto",
     label: "Crypto (USDT)",
-    icon: "₿",
+    icon: <Icons.Globe size={18} />,
     placeholder: "Your USDT wallet address (TRC20)",
   },
 ];
 
 const MIN_WITHDRAWAL = 100;
 
-const TX_LABELS: Record<TransactionType, { icon: string; color: string }> = {
-  deposit: { icon: "💳", color: "text-emerald2" },
-  withdrawal: { icon: "💸", color: "text-red-400" },
-  task_payment: { icon: "🚀", color: "text-red-400" },
-  task_earning: { icon: "🎉", color: "text-emerald2" },
-  refund: { icon: "↩️", color: "text-violet-light" },
-  bonus: { icon: "🎁", color: "text-amber-400" },
+const TX_META: Record<
+  TransactionType,
+  { icon: React.ReactNode; color: string }
+> = {
+  deposit: { icon: <Icons.CreditCard size={15} />, color: "text-emerald2" },
+  withdrawal: { icon: <Icons.CoinOut size={15} />, color: "text-red-400" },
+  task_payment: { icon: <Icons.Rocket size={15} />, color: "text-red-400" },
+  task_earning: { icon: <Icons.Star size={15} />, color: "text-emerald2" },
+  refund: { icon: <Icons.ArrowLeft size={15} />, color: "text-violet-light" },
+  bonus: { icon: <Icons.PiggyBank size={15} />, color: "text-amber-400" },
 };
 
-const STATUS_DISPLAY: Record<string, { icon: React.ReactNode; color: string }> =
-  {
-    pending: { icon: <Clock size={14} />, color: "text-amber-400" },
-    processing: { icon: <Clock size={14} />, color: "text-violet-light" },
-    completed: { icon: <CheckCircle size={14} />, color: "text-emerald2" },
-    rejected: { icon: <XCircle size={14} />, color: "text-red-400" },
-  };
+const STATUS_DISPLAY: Record<
+  string,
+  { icon: React.ReactNode; color: string }
+> = {
+  pending: { icon: <Icons.Clock size={14} />, color: "text-amber-400" },
+  processing: { icon: <Icons.Clock size={14} />, color: "text-violet-light" },
+  completed: { icon: <Icons.Approve size={14} />, color: "text-emerald2" },
+  rejected: { icon: <Icons.Cancel size={14} />, color: "text-red-400" },
+};
+
+const tabs = [
+  { key: "withdraw" as const, label: "Withdraw", icon: <Icons.CoinOut size={14} /> },
+  { key: "history" as const, label: "Earnings History", icon: <Icons.Clock size={14} /> },
+  { key: "withdrawals" as const, label: "My Withdrawals", icon: <Icons.Refresh size={14} /> },
+];
 
 export default function EarnerWallet() {
   const { user, updateWallet } = useAuthStore();
@@ -77,21 +82,19 @@ export default function EarnerWallet() {
   const [method, setMethod] = useState<WithdrawalMethod>("bank_transfer");
   const [amount, setAmount] = useState("");
   const [accountDetails, setAccountDetails] = useState("");
-  const [activeTab, setActiveTab] = useState<
-    "withdraw" | "history" | "withdrawals"
-  >("withdraw");
+  const [activeTab, setActiveTab] = useState<"withdraw" | "history" | "withdrawals">("withdraw");
 
   const earningTransactions = transactions.filter(
     (tx) =>
       tx.type === "task_earning" ||
       tx.type === "withdrawal" ||
-      tx.type === "bonus",
+      tx.type === "bonus"
   );
 
   const handleWithdraw = () => {
     const amt = Number(amount);
     if (!amt || amt < MIN_WITHDRAWAL) {
-      notify.error(`Minimum withdrawal is 🪙${MIN_WITHDRAWAL}`);
+      notify.error(`Minimum withdrawal is ${MIN_WITHDRAWAL} coins`);
       return;
     }
     if (!user || amt > user.walletBalance) {
@@ -103,35 +106,35 @@ export default function EarnerWallet() {
       return;
     }
 
+    const methodLabel = METHODS.find((m) => m.key === method)?.label;
+
     updateWallet(user.walletBalance - amt);
     addTransaction({
       type: "withdrawal",
       amount: -amt,
-      description: `Withdrawal via ${METHODS.find((m) => m.key === method)?.label}`,
+      description: `Withdrawal via ${methodLabel}`,
     });
     addWithdrawal({
       amount: amt,
       method,
       accountDetails: accountDetails.trim(),
     });
-    pushActivity(`Withdrawal of 🪙${amt.toLocaleString()} requested`, "violet");
+    pushActivity(
+      `Withdrawal of ${amt.toLocaleString()} coins requested`,
+      "violet"
+    );
     addNotification({
       type: "withdrawal_processed",
-      title: "💸 Withdrawal Requested",
-      message: `Your withdrawal of 🪙${amt.toLocaleString()} via ${METHODS.find((m) => m.key === method)?.label} is being processed.`,
+      title: "Withdrawal Requested",
+      message: `Your withdrawal of ${amt.toLocaleString()} coins via ${methodLabel} is being processed.`,
     });
+    notify.success(`Withdrawal of ${amt.toLocaleString()} coins submitted!`);
 
     setAmount("");
     setAccountDetails("");
   };
 
   const selectedMethod = METHODS.find((m) => m.key === method)!;
-
-  const tabs = [
-    { key: "withdraw" as const, label: "💸 Withdraw" },
-    { key: "history" as const, label: "📜 Earnings History" },
-    { key: "withdrawals" as const, label: "⏳ My Withdrawals" },
-  ];
 
   return (
     <div className="space-y-6">
@@ -152,13 +155,17 @@ export default function EarnerWallet() {
           <div className="text-xs text-slatec uppercase tracking-wide mb-1">
             Available to Withdraw
           </div>
-          <div className="font-sora font-extrabold text-3xl sm:text-4xl text-emerald2">
-            {(user?.walletBalance ?? 0).toLocaleString()} 🪙
+          <div className="font-sora font-extrabold text-3xl sm:text-4xl text-emerald2 flex items-center gap-2">
+            <Icons.Wallet size={28} className="text-emerald2" />
+            {(user?.walletBalance ?? 0).toLocaleString()}
+            <span className="text-base font-normal text-slatec">coins</span>
           </div>
-          <div className="text-xs text-slatec mt-1">
-            Minimum withdrawal: 🪙{MIN_WITHDRAWAL.toLocaleString()}
+          <div className="text-xs text-slatec mt-1 flex items-center gap-1">
+            <Icons.Info size={12} />
+            Minimum withdrawal: {MIN_WITHDRAWAL.toLocaleString()} coins
           </div>
         </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,8 +175,10 @@ export default function EarnerWallet() {
           <div className="text-xs text-slatec uppercase tracking-wide mb-1">
             Total Earned
           </div>
-          <div className="font-sora font-extrabold text-2xl text-violet-light">
-            {(user?.totalEarned ?? 0).toLocaleString()} 🪙
+          <div className="font-sora font-extrabold text-2xl text-violet-light flex items-center gap-2">
+            <Icons.Trending size={22} className="text-violet-light" />
+            {(user?.totalEarned ?? 0).toLocaleString()}
+            <span className="text-sm font-normal text-slatec">coins</span>
           </div>
           <div className="text-xs text-slatec mt-1">All time</div>
         </motion.div>
@@ -181,12 +190,13 @@ export default function EarnerWallet() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`rounded-xl px-4 py-1.5 text-sm font-semibold transition-all border ${
+            className={`rounded-xl px-4 py-1.5 text-sm font-semibold transition-all border flex items-center gap-1.5 ${
               activeTab === tab.key
                 ? "border-emerald2 bg-emerald2/15 text-emerald2"
                 : "border-border text-slatec hover:border-white/20"
             }`}
           >
+            {tab.icon}
             {tab.label}
           </button>
         ))}
@@ -202,7 +212,8 @@ export default function EarnerWallet() {
             exit={{ opacity: 0, y: -6 }}
             className="card p-5 max-w-lg space-y-4"
           >
-            <h2 className="font-sora font-bold text-base">
+            <h2 className="font-sora font-bold text-base flex items-center gap-2">
+              <Icons.CoinOut size={16} />
               Choose Withdrawal Method
             </h2>
 
@@ -220,7 +231,7 @@ export default function EarnerWallet() {
                       : "border-border text-slatec hover:border-white/20"
                   }`}
                 >
-                  <span className="text-lg">{m.icon}</span>
+                  {m.icon}
                   {m.label}
                 </button>
               ))}
@@ -237,7 +248,7 @@ export default function EarnerWallet() {
             </div>
 
             <div>
-              <label className="label">Amount (🪙)</label>
+              <label className="label">Amount (coins)</label>
               <input
                 className="input"
                 type="number"
@@ -251,8 +262,9 @@ export default function EarnerWallet() {
 
             <div className="bg-navy-2 border border-border rounded-xl px-4 py-2.5 flex items-center justify-between text-sm">
               <span className="text-slatec">You'll receive</span>
-              <span className="font-sora font-bold text-emerald2">
-                🪙 {amount ? Number(amount).toLocaleString() : "0"}
+              <span className="font-sora font-bold text-emerald2 flex items-center gap-1.5">
+                <Icons.CoinIn size={14} />
+                {amount ? Number(amount).toLocaleString() : "0"} coins
               </span>
             </div>
 
@@ -263,8 +275,9 @@ export default function EarnerWallet() {
                 Number(amount) < MIN_WITHDRAWAL ||
                 Number(amount) > (user?.walletBalance ?? 0)
               }
-              className="btn-green w-full font-sora disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-green w-full font-sora disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
+              <Icons.Send size={16} />
               Request Withdrawal
             </button>
           </motion.div>
@@ -280,20 +293,23 @@ export default function EarnerWallet() {
           >
             {earningTransactions.length === 0 ? (
               <div className="card p-10 text-center text-slatec">
-                <div className="text-3xl mb-2">💼</div>
-                No earnings yet — complete tasks to start earning!
+                <Icons.Wallet
+                  size={32}
+                  className="mx-auto mb-3 opacity-30"
+                />
+                <p>No earnings yet — complete tasks to start earning!</p>
               </div>
             ) : (
               <div className="card divide-y divide-border">
                 {earningTransactions.map((tx) => {
-                  const meta = TX_LABELS[tx.type];
+                  const meta = TX_META[tx.type];
                   const isCredit = tx.amount > 0;
                   return (
                     <div
                       key={tx.id}
                       className="flex items-center gap-3 px-4 sm:px-5 py-3"
                     >
-                      <div className="w-9 h-9 rounded-xl bg-navy-2 flex items-center justify-center text-base flex-shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-navy-2 flex items-center justify-center flex-shrink-0 text-slatec">
                         {meta.icon}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -308,12 +324,15 @@ export default function EarnerWallet() {
                         className={`font-sora font-bold text-sm flex items-center gap-1 ${meta.color}`}
                       >
                         {isCredit ? (
-                          <ArrowDownCircle size={14} />
+                          <Icons.CoinIn size={14} />
                         ) : (
-                          <ArrowUpCircle size={14} />
+                          <Icons.CoinOut size={14} />
                         )}
                         {isCredit ? "+" : ""}
-                        {tx.amount.toLocaleString()} 🪙
+                        {tx.amount.toLocaleString()}
+                        <span className="text-xs font-normal text-slatec">
+                          coins
+                        </span>
                       </div>
                     </div>
                   );
@@ -333,8 +352,11 @@ export default function EarnerWallet() {
           >
             {withdrawals.length === 0 ? (
               <div className="card p-10 text-center text-slatec">
-                <div className="text-3xl mb-2">⏳</div>
-                No withdrawal requests yet.
+                <Icons.Refresh
+                  size={32}
+                  className="mx-auto mb-3 opacity-30"
+                />
+                <p>No withdrawal requests yet.</p>
               </div>
             ) : (
               <div className="card divide-y divide-border">
@@ -346,7 +368,7 @@ export default function EarnerWallet() {
                       key={w.id}
                       className="flex items-center gap-3 px-4 sm:px-5 py-3"
                     >
-                      <div className="w-9 h-9 rounded-xl bg-navy-2 flex items-center justify-center text-base flex-shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-navy-2 flex items-center justify-center flex-shrink-0 text-slatec">
                         {methodMeta.icon}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -361,11 +383,12 @@ export default function EarnerWallet() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-sora font-bold text-sm text-red-400 mb-1">
-                          -{w.amount.toLocaleString()} 🪙
+                        <div className="font-sora font-bold text-sm text-red-400 mb-1 flex items-center justify-end gap-1">
+                          <Icons.CoinOut size={13} />
+                          {w.amount.toLocaleString()} coins
                         </div>
                         <div
-                          className={`flex items-center gap-1 text-xs font-semibold ${statusMeta.color}`}
+                          className={`flex items-center justify-end gap-1 text-xs font-semibold ${statusMeta.color}`}
                         >
                           {statusMeta.icon} {w.status}
                         </div>

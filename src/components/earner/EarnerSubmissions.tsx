@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '../../store/appStore';
-import { PLATFORM_ICONS } from '../../services/mockData';
+import { PlatformIcon } from '../icons/PlatformIcons';
 
 type StatusFilter = 'all' | 'approved' | 'pending' | 'rejected';
 
@@ -128,7 +128,7 @@ export default function EarnerSubmissions() {
               <div className="flex items-start gap-3">
                 {/* Platform icon */}
                 <div className="w-10 h-10 rounded-xl bg-navy-2 flex items-center justify-center text-lg flex-shrink-0">
-                  {PLATFORM_ICONS[sub.platform] ?? '📱'}
+                  <PlatformIcon platform={sub.platform} size={22} />
                 </div>
 
                 <div className="flex-1 min-w-0">

@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/appStore';
 import StatCard from '../shared/StatCard';
 import CreateTaskForm from './CreateTaskForm';
 import ActivityFeed from './ActivityFeed';
+import { Icons } from '../icons/Icons';
 
 export default function AdvertiserOverview() {
   const user = useAuthStore((s) => s.user);
@@ -31,7 +32,9 @@ export default function AdvertiserOverview() {
 
       <div className="grid lg:grid-cols-[1fr_1.3fr] gap-5">
         <div>
-          <h2 className="font-sora font-bold text-base mb-3">📋 Create New Task</h2>
+          <span className="flex items-center gap-1">
+          <h2 className="font-sora font-bold text-base mb-3"><Icons.Tasks /> Create New Task</h2>
+          </span>
           <CreateTaskForm />
         </div>
         <div>
