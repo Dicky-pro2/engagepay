@@ -4,15 +4,17 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
+import VerifyEmail from './pages/VerifyEmail';
+import ResendVerification from './pages/ResendVerification';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Overview from './pages/OverView';
 import Tasks from './pages/Tasks';
 import Wallet from './pages/Wallet';
-import { useAuthStore } from './store/authStore';
 import Submissions from './pages/Submissions';
 import Review from './pages/Review';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
+import { useAuthStore } from './store/authStore';
 
 export default function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -21,13 +23,17 @@ export default function App() {
     <BrowserRouter>
       <Toaster />
       <Routes>
-        {/* Public routes */}
+        {/* Public */}
         <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Landing />} />
         <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} />
         <Route path="/signup" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Signup />} />
         <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/dashboard" /> : <ForgotPassword />} />
 
-        {/* Protected routes */}
+        {/* Verification — accessible whether logged in or not */}
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/resend-verification" element={<ResendVerification />} />
+
+        {/* Protected */}
         <Route path="/dashboard" element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" />}>
           <Route index element={<Overview />} />
           <Route path="tasks" element={<Tasks />} />
@@ -37,6 +43,7 @@ export default function App() {
           <Route path="profile" element={<Profile />} />
         </Route>
 
+        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

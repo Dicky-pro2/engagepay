@@ -12,6 +12,7 @@ interface AuthState {
   setTokens: (accessToken: string, refreshToken: string) => void;
   updateWallet: (newBalance: number) => void;
   updateName: (name: string) => void;
+  verifyEmail: () => void;
   logout: () => void;
 }
 
@@ -41,6 +42,11 @@ export const useAuthStore = create<AuthState>()(
           user: state.user ? { ...state.user, name } : state.user,
         })),
 
+      verifyEmail: () =>
+        set((state) => ({
+          user: state.user ? { ...state.user, isEmailVerified: true } : state.user,
+        })),
+
       logout: () => {
         set({
           user: null,
@@ -60,8 +66,6 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        // When the page reloads and auth restores from localStorage,
-        // also reload that user's app data.
         if (state?.user?.id) {
           useAppStore.getState().loadUserData(state.user.id);
         }
