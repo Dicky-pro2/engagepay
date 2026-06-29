@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Toaster from './components/Toaster';
+//import ErrorBoundary from './components/ErrorBoundary';
+import RouteErrorBoundary from './components/RouteErrorBoundary';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -16,6 +18,11 @@ import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import { useAuthStore } from './store/authStore';
 
+// Wraps a page component in a RouteErrorBoundary
+function SafePage({ children }: { children: React.ReactNode }) {
+  return <RouteErrorBoundary>{children}</RouteErrorBoundary>;
+}
+
 export default function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
@@ -29,18 +36,21 @@ export default function App() {
         <Route path="/signup" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Signup />} />
         <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/dashboard" /> : <ForgotPassword />} />
 
-        {/* Verification — accessible whether logged in or not */}
+        {/* Verification */}
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/resend-verification" element={<ResendVerification />} />
 
         {/* Protected */}
-        <Route path="/dashboard" element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" />}>
-          <Route index element={<Overview />} />
-          <Route path="tasks" element={<Tasks />} />
-          <Route path="wallet" element={<Wallet />} />
-          <Route path="submissions" element={<Submissions />} />
-          <Route path="review" element={<Review />} />
-          <Route path="profile" element={<Profile />} />
+        <Route
+          path="/dashboard"
+          element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" />}
+        >
+          <Route index element={<SafePage><Overview /></SafePage>} />
+          <Route path="tasks" element={<SafePage><Tasks /></SafePage>} />
+          <Route path="wallet" element={<SafePage><Wallet /></SafePage>} />
+          <Route path="submissions" element={<SafePage><Submissions /></SafePage>} />
+          <Route path="review" element={<SafePage><Review /></SafePage>} />
+          <Route path="profile" element={<SafePage><Profile /></SafePage>} />
         </Route>
 
         {/* 404 */}

@@ -1,44 +1,45 @@
-import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { useAppStore } from '../../store/appStore';
-import { PlatformIcon } from '../icons/PlatformIcons';
+import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { useAppStore } from "../../store/appStore";
+import { Icons } from "../icons/Icons";
+import { PlatformIcon } from "../icons/PlatformIcons";
 
-type StatusFilter = 'all' | 'approved' | 'pending' | 'rejected';
+type StatusFilter = "all" | "approved" | "pending" | "rejected";
 
 const STATUS_STYLES: Record<string, string> = {
-  approved: 'badge-green',
-  pending: 'badge-yellow',
-  rejected: 'badge-red',
+  approved: "badge-green",
+  pending: "badge-yellow",
+  rejected: "badge-red",
 };
 
 const STATUS_ICONS: Record<string, string> = {
-  approved: '✅',
-  pending: '⏳',
-  rejected: '❌',
+  approved: "✅",
+  pending: "⏳",
+  rejected: "❌",
 };
 
 export default function EarnerSubmissions() {
   const submissions = useAppStore((s) => s.submissions);
-  const [filter, setFilter] = useState<StatusFilter>('all');
+  const [filter, setFilter] = useState<StatusFilter>("all");
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return submissions;
+    if (filter === "all") return submissions;
     return submissions.filter((s) => s.status === filter);
   }, [submissions, filter]);
 
   const totalEarned = useMemo(
     () =>
       submissions
-        .filter((s) => s.status === 'approved')
+        .filter((s) => s.status === "approved")
         .reduce((sum, s) => sum + s.reward, 0),
-    [submissions]
+    [submissions],
   );
 
   const filters: { key: StatusFilter; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'approved', label: '✅ Approved' },
-    { key: 'pending', label: '⏳ Pending' },
-    { key: 'rejected', label: '❌ Rejected' },
+    { key: "all", label: "All" },
+    { key: "approved", label: "✅ Approved" },
+    { key: "pending", label: "⏳ Pending" },
+    { key: "rejected", label: "❌ Rejected" },
   ];
 
   return (
@@ -72,7 +73,7 @@ export default function EarnerSubmissions() {
             Approved
           </div>
           <div className="font-sora font-bold text-2xl text-emerald2">
-            {submissions.filter((s) => s.status === 'approved').length}
+            {submissions.filter((s) => s.status === "approved").length}
           </div>
         </motion.div>
         <motion.div
@@ -98,8 +99,8 @@ export default function EarnerSubmissions() {
             onClick={() => setFilter(f.key)}
             className={`rounded-xl border px-4 py-1.5 text-sm font-semibold transition-all ${
               filter === f.key
-                ? 'border-emerald2 bg-emerald2/15 text-emerald2'
-                : 'border-border text-slatec hover:border-white/20'
+                ? "border-emerald2 bg-emerald2/15 text-emerald2"
+                : "border-border text-slatec hover:border-white/20"
             }`}
           >
             {f.label}
@@ -112,8 +113,8 @@ export default function EarnerSubmissions() {
         <div className="card p-10 text-center text-slatec">
           <div className="text-3xl mb-2">📋</div>
           {submissions.length === 0
-            ? 'No submissions yet — complete tasks to see them here!'
-            : 'No submissions match this filter.'}
+            ? "No submissions yet — complete tasks to see them here!"
+            : "No submissions match this filter."}
         </div>
       ) : (
         <div className="space-y-3">
@@ -123,33 +124,37 @@ export default function EarnerSubmissions() {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              className="card p-4 sm:p-5"
+              className="card p-3 sm:p-5"
             >
               <div className="flex items-start gap-3">
-                {/* Platform icon */}
-                <div className="w-10 h-10 rounded-xl bg-navy-2 flex items-center justify-center text-lg flex-shrink-0">
-                  <PlatformIcon platform={sub.platform} size={22} />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-navy-2 flex items-center justify-center flex-shrink-0">
+                  <PlatformIcon platform={sub.platform} size={18} />
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-                    <span className="font-semibold text-sm">{sub.taskTitle}</span>
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2 flex-wrap">
+                    <span className="font-semibold text-xs sm:text-sm">
+                      {sub.taskTitle}
+                    </span>
                     <span className={STATUS_STYLES[sub.status]}>
                       {STATUS_ICONS[sub.status]} {sub.status}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="badge-yellow">🪙 {sub.reward}</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="badge-yellow flex items-center gap-1 text-xs">
+                      <Icons.Wallet size={10} /> {sub.reward} coins
+                    </span>
                     <span className="text-xs text-slatec">
-                      {new Date(sub.createdAt).toLocaleString()}
+                      {new Date(sub.createdAt).toLocaleDateString()}
                     </span>
                   </div>
 
-                  {/* Proof submitted */}
-                  <div className="mt-2 bg-navy-2 rounded-lg px-3 py-2 text-xs text-slatec">
-                    <span className="text-white/50 mr-1">Proof:</span>
-                    <span className="break-all">{sub.proof}</span>
+                  <div className="bg-navy-2 rounded-lg px-2.5 py-1.5 text-xs flex items-start gap-2">
+                    <span className="text-slatec flex-shrink-0">Proof:</span>
+                    <span className="break-all text-slatec/80">
+                      {sub.proof}
+                    </span>
                   </div>
                 </div>
               </div>

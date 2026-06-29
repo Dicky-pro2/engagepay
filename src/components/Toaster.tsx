@@ -1,4 +1,5 @@
 import { Toaster as HotToaster } from 'react-hot-toast';
+//import env from '../config/env';
 
 export default function Toaster() {
   return (

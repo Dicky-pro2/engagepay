@@ -1,32 +1,31 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Megaphone, Coins, ArrowRight } from 'lucide-react';
+import { Icons } from '../components/icons/Icons';
 
 export default function Landing() {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-12 relative overflow-hidden">
-      {/* Background orbs */}
-      <div className="absolute w-[500px] h-[500px] bg-violet/20 rounded-full blur-[100px] -top-32 -left-32 pointer-events-none" />
-      <div className="absolute w-[400px] h-[400px] bg-blue-500/15 rounded-full blur-[100px] -bottom-24 -right-24 pointer-events-none" />
+      <div className="absolute w-[400px] h-[400px] bg-violet/20 rounded-full blur-[100px] -top-32 -left-32 pointer-events-none" />
+      <div className="absolute w-[300px] h-[300px] bg-blue-500/15 rounded-full blur-[100px] -bottom-24 -right-24 pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-10 relative z-10"
+        className="text-center mb-8 sm:mb-10 relative z-10 px-2"
       >
         <h1 className="font-sora font-extrabold text-3xl sm:text-4xl mb-2">
           Engage<span className="text-violet-light">Pay</span>
         </h1>
-        <p className="text-slatec text-sm sm:text-base">
+        <p className="text-slatec text-sm sm:text-base max-w-xs sm:max-w-none mx-auto">
           Real social media engagement, powered by real people.
         </p>
       </motion.div>
 
-      <div className="flex flex-col sm:flex-row gap-5 relative z-10 w-full max-w-2xl justify-center">
+      <div className="flex flex-col sm:flex-row gap-4 relative z-10 w-full max-w-2xl px-2">
         <RoleCard
-          icon={<Megaphone size={32} />}
+          icon={<Icons.Advertiser size={28} />}
           title="I'm an Advertiser"
           desc="Post tasks for followers, likes & comments. Fund your wallet and watch engagement grow."
           color="violet"
@@ -34,7 +33,7 @@ export default function Landing() {
           onClick={() => navigate('/signup?role=advertiser')}
         />
         <RoleCard
-          icon={<Coins size={32} />}
+          icon={<Icons.Earner size={28} />}
           title="I'm an Earner"
           desc="Browse tasks, complete them, and earn coins instantly. Withdraw anytime."
           color="green"
@@ -43,7 +42,6 @@ export default function Landing() {
         />
       </div>
 
-      {/* Already have account */}
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -88,16 +86,22 @@ function RoleCard({ icon, title, desc, color, buttonLabel, onClick }: RoleCardPr
   return (
     <motion.div
       whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={`card p-7 sm:p-8 w-full sm:w-72 text-center cursor-pointer transition-all ${borderHover[color]}`}
+      className={`card p-6 sm:p-8 w-full sm:w-72 cursor-pointer transition-all ${borderHover[color]}`}
     >
-      <div className={`w-16 h-16 rounded-2xl ${iconBg[color]} flex items-center justify-center mx-auto mb-4`}>
-        {icon}
+      <div className="flex sm:flex-col items-center sm:items-start gap-4 sm:gap-0">
+        <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${iconBg[color]} flex items-center justify-center flex-shrink-0 sm:mb-4`}>
+          {icon}
+        </div>
+        <div className="flex-1 sm:flex-none">
+          <h3 className="font-sora font-bold text-base sm:text-lg sm:mb-2">{title}</h3>
+          <p className="text-slatec text-xs sm:text-sm leading-relaxed hidden sm:block sm:mb-5">{desc}</p>
+        </div>
       </div>
-      <h3 className="font-sora font-bold text-lg mb-2">{title}</h3>
-      <p className="text-slatec text-sm leading-relaxed mb-5">{desc}</p>
-      <span className={`inline-flex items-center gap-2 text-white font-bold text-sm rounded-full px-6 py-2.5 transition-all ${btnBg[color]}`}>
-        {buttonLabel} <ArrowRight size={16} />
+      <p className="text-slatec text-xs leading-relaxed mt-2 mb-4 sm:hidden">{desc}</p>
+      <span className={`inline-flex items-center gap-2 text-white font-bold text-sm rounded-full px-5 py-2 transition-all ${btnBg[color]}`}>
+        {buttonLabel} <Icons.ArrowRight size={15} />
       </span>
     </motion.div>
   );

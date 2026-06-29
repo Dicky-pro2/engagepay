@@ -6,7 +6,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useAppStore } from "../../store/appStore";
 import { notify } from "../../utils/notify";
 import NotificationPanel from "./NotificationPanel";
-import VerificationBanner from "../shared/VerificationBanner";
+import VerificationBanner from "./VerificationBanner";
 
 export default function DashboardLayout() {
   const { user, logout } = useAuthStore();

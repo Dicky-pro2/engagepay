@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Icons } from '../icons/Icons';
-import { useAuthStore } from '../../store/authStore';
-import { useAppStore } from '../../store/appStore';
-import { notify } from '../../utils/notify';
-import type { Task } from '../../types';
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Icons } from "../icons/Icons";
+import { useAuthStore } from "../../store/authStore";
+import { useAppStore } from "../../store/appStore";
+import { notify } from "../../utils/notify";
+import type { Task } from "../../types";
 
 interface TaskModalProps {
   task: Task | null;
@@ -13,12 +13,15 @@ interface TaskModalProps {
 
 export default function TaskModal({ task, onClose }: TaskModalProps) {
   const { user, updateWallet } = useAuthStore();
-  const { completeTask, addTransaction, pushActivity, addNotification } = useAppStore();
-  const [proof, setProof] = useState('');
+  const { completeTask, addTransaction, pushActivity, addNotification } =
+    useAppStore();
+  const [proof, setProof] = useState("");
 
   const handleSubmit = () => {
     if (!proof.trim()) {
-      notify.error('Please provide proof (your profile URL or screenshot link)');
+      notify.error(
+        "Please provide proof (your profile URL or screenshot link)",
+      );
       return;
     }
     if (!task || !user) return;
@@ -26,22 +29,22 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
     completeTask(task.id, proof);
     updateWallet(user.walletBalance + task.reward);
     addTransaction({
-      type: 'task_earning',
+      type: "task_earning",
       amount: task.reward,
       description: `Earned from: ${task.taskType} on ${task.platform}`,
     });
     pushActivity(
       `Task completed: ${task.taskType} on ${task.platform} · 🪙${task.reward} paid out`,
-      'green'
+      "green",
     );
     addNotification({
-      type: 'task_approved',
-      title: '💰 Task Approved!',
+      type: "task_approved",
+      title: "💰 Task Approved!",
       message: `You earned 🪙${task.reward} for "${task.taskType} on ${task.platform}"`,
     });
 
     notify.coinsEarned(task.reward, `${task.taskType} on ${task.platform}`);
-    setProof('');
+    setProof("");
     onClose();
   };
 
@@ -60,7 +63,7 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.98 }}
             onClick={(e) => e.stopPropagation()}
-            className="card p-6 w-full max-w-md relative"
+            className="card p-5 sm:p-6 w-full max-w-md relative mx-2 sm:mx-0 max-h-[90vh] overflow-y-auto"
           >
             <button
               onClick={onClose}
@@ -73,15 +76,17 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
               {task.taskType} on {task.platform}
             </h2>
             <p className="text-slatec text-sm mb-4">
-              Earn{' '}
-              <span className="text-emerald2 font-semibold">🪙{task.reward}</span>{' '}
+              Earn{" "}
+              <span className="text-emerald2 font-semibold">
+                🪙{task.reward}
+              </span>{" "}
               for completing this task
             </p>
 
             <div className="bg-navy-2 border border-border rounded-xl p-4 mb-4 text-sm text-slatec leading-relaxed">
               {task.instructions}
               <br />
-              
+
               <a
                 href={task.url}
                 target="_blank"
