@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 import type {
   Task,
   TaskSubmission,
@@ -7,8 +7,8 @@ import type {
   Withdrawal,
   Notification,
   Submission,
-} from '../types';
-import { mockTasks } from '../services/mockData';
+} from "../types";
+import { mockTasks } from "../services/mockData";
 
 interface UserAppData {
   tasks: Task[];
@@ -29,23 +29,28 @@ interface AppState extends UserAppData {
   setTasks: (tasks: Task[]) => void;
   setMyTasks: (tasks: Task[]) => void;
   addTask: (task: Task) => void;
-  pushActivity: (msg: string, type?: 'violet' | 'green') => void;
-  updateTaskStatus: (taskId: string, status: Task['status']) => Task | undefined;
-  addTransaction: (tx: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  pushActivity: (msg: string, type?: "violet" | "green") => void;
+  updateTaskStatus: (
+    taskId: string,
+    status: Task["status"],
+  ) => Task | undefined;
+  addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => void;
   completeTask: (taskId: string, proof: string) => Task | undefined;
-  addWithdrawal: (w: Omit<Withdrawal, 'id' | 'createdAt' | 'status'>) => void;
-  addNotification: (n: Omit<Notification, 'id' | 'createdAt' | 'isRead'>) => void;
+  addWithdrawal: (w: Omit<Withdrawal, "id" | "createdAt" | "status">) => void;
+  addNotification: (
+    n: Omit<Notification, "id" | "createdAt" | "isRead">,
+  ) => void;
   markAllNotificationsRead: () => void;
   markNotificationRead: (id: string) => void;
   reviewTaskSubmission: (
     taskId: string,
     submissionId: string,
-    action: 'approve' | 'reject',
-    note?: string
+    action: "approve" | "reject",
+    note?: string,
   ) => void;
 }
 
-const STORAGE_PREFIX = 'engagepay-user-data:';
+const STORAGE_PREFIX = "zynk-user-data:";
 
 const defaultUserData = (): UserAppData => ({
   tasks: [...mockTasks],
@@ -57,9 +62,10 @@ const defaultUserData = (): UserAppData => ({
   notifications: [
     {
       id: crypto.randomUUID(),
-      type: 'welcome',
-      title: 'Welcome to EngagePay! 🎉',
-      message: 'Your account is ready. Start exploring tasks or post your first campaign.',
+      type: "welcome",
+      title: "Welcome to Zynk! 🎉",
+      message:
+        "Your account is ready. Start exploring tasks or post your first campaign.",
       isRead: false,
       createdAt: new Date().toISOString(),
     },
@@ -125,11 +131,16 @@ export const useAppStore = create<AppState>((set, get) => {
       });
     },
 
-    pushActivity: (msg, type = 'violet') => {
+    pushActivity: (msg, type = "violet") => {
       const state = get();
       persistCurrent({
         activity: [
-          { id: crypto.randomUUID(), msg, type, time: new Date().toLocaleTimeString() },
+          {
+            id: crypto.randomUUID(),
+            msg,
+            type,
+            time: new Date().toLocaleTimeString(),
+          },
           ...state.activity,
         ].slice(0, 20),
       });
@@ -158,7 +169,11 @@ export const useAppStore = create<AppState>((set, get) => {
       const state = get();
       persistCurrent({
         transactions: [
-          { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...tx },
+          {
+            id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(),
+            ...tx,
+          },
           ...state.transactions,
         ],
       });
@@ -171,10 +186,10 @@ export const useAppStore = create<AppState>((set, get) => {
 
       const newTaskSubmission: TaskSubmission = {
         id: crypto.randomUUID(),
-        earnerName: 'Current Earner',
-        earnerId: 'earner_current',
+        earnerName: "Current Earner",
+        earnerId: "earner_current",
         proof,
-        status: 'approved',
+        status: "approved",
         createdAt: new Date().toISOString(),
       };
 
@@ -186,7 +201,7 @@ export const useAppStore = create<AppState>((set, get) => {
             ...t,
             slotsLeft,
             completionCount: t.completionCount + 1,
-            status: slotsLeft <= 0 ? 'completed' : t.status,
+            status: slotsLeft <= 0 ? "completed" : t.status,
             completedByCurrentUser: true,
             taskSubmissions: [...(t.taskSubmissions ?? []), newTaskSubmission],
           };
@@ -196,12 +211,14 @@ export const useAppStore = create<AppState>((set, get) => {
       const newSubmission: Submission = {
         id: crypto.randomUUID(),
         taskId,
-        taskTitle: task ? `${task.taskType} on ${task.platform}` : 'Unknown Task',
-        platform: task?.platform ?? '',
-        taskType: task?.taskType ?? '',
+        taskTitle: task
+          ? `${task.taskType} on ${task.platform}`
+          : "Unknown Task",
+        platform: task?.platform ?? "",
+        taskType: task?.taskType ?? "",
         reward: task?.reward ?? 0,
         proof,
-        status: 'approved',
+        status: "approved",
         createdAt: new Date().toISOString(),
       };
 
@@ -221,7 +238,7 @@ export const useAppStore = create<AppState>((set, get) => {
           {
             id: crypto.randomUUID(),
             createdAt: new Date().toISOString(),
-            status: 'pending',
+            status: "pending",
             ...w,
           },
           ...state.withdrawals,
@@ -255,7 +272,7 @@ export const useAppStore = create<AppState>((set, get) => {
       const state = get();
       persistCurrent({
         notifications: state.notifications.map((n) =>
-          n.id === id ? { ...n, isRead: true } : n
+          n.id === id ? { ...n, isRead: true } : n,
         ),
       });
     },
@@ -270,17 +287,22 @@ export const useAppStore = create<AppState>((set, get) => {
             if (s.id !== submissionId) return s;
             return {
               ...s,
-              status: action === 'approve' ? ('approved' as const) : ('rejected' as const),
+              status:
+                action === "approve"
+                  ? ("approved" as const)
+                  : ("rejected" as const),
               reviewNote: note,
             };
           });
-          const slotsLeft = action === 'reject' ? t.slotsLeft + 1 : t.slotsLeft;
+          const slotsLeft = action === "reject" ? t.slotsLeft + 1 : t.slotsLeft;
           return {
             ...t,
             taskSubmissions: updatedSubmissions,
             slotsLeft,
             completionCount:
-              action === 'reject' ? Math.max(0, t.completionCount - 1) : t.completionCount,
+              action === "reject"
+                ? Math.max(0, t.completionCount - 1)
+                : t.completionCount,
           };
         });
 

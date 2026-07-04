@@ -56,7 +56,7 @@ export default function DashboardLayout() {
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-navy/90 border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           <div className="font-sora font-extrabold text-xl flex-shrink-0">
-            Engage<span className="text-violet-light">Pay</span>
+            Zynk<span className="text-violet-light">Buzz</span>
           </div>
 
           <div className="hidden sm:flex items-center gap-1 bg-card border border-border rounded-full p-1">

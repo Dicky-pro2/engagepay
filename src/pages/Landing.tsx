@@ -16,7 +16,7 @@ export default function Landing() {
         className="text-center mb-8 sm:mb-10 relative z-10 px-2"
       >
         <h1 className="font-sora font-extrabold text-3xl sm:text-4xl mb-2">
-          Engage<span className="text-violet-light">Pay</span>
+          Zynk<span className="text-violet-light">Buzz</span>
         </h1>
         <p className="text-slatec text-sm sm:text-base max-w-xs sm:max-w-none mx-auto">
           Real social media engagement, powered by real people.

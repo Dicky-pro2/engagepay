@@ -157,7 +157,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       >
         <div className="text-center mb-6">
           <Link to="/" className="font-sora font-extrabold text-xl">
-            Engage<span className="text-violet-light">Pay</span>
+            Zynk<span className="text-violet-light">Buzz</span>
           </Link>
         </div>
         {children}

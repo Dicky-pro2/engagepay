@@ -1,5 +1,5 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { Icons } from './icons/Icons';
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Icons } from "./icons/Icons";
 
 interface Props {
   children: ReactNode;
@@ -25,12 +25,12 @@ export default class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
     // When backend is ready, send to error tracking (e.g. Sentry)
-    console.error('EngagePay Error Boundary caught:', error, errorInfo);
+    console.error("Zynk Error Boundary caught:", error, errorInfo);
   }
 
   handleReset = () => {
     this.setState({ hasError: false, error: null, errorInfo: null });
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   handleReload = () => {
@@ -51,7 +51,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           <div className="card p-8 w-full max-w-lg relative z-10 text-center">
             {/* Logo */}
             <div className="font-sora font-extrabold text-xl mb-8">
-              Engage<span className="text-violet-light">Pay</span>
+              Zy<span className="text-violet-light">nk</span>
             </div>
 
             {/* Error icon */}
@@ -63,8 +63,9 @@ export default class ErrorBoundary extends Component<Props, State> {
               Something went wrong
             </h1>
             <p className="text-slatec text-sm leading-relaxed mb-6">
-              An unexpected error occurred. This has been logged and we'll look into it.
-              You can try reloading the page or going back to the home screen.
+              An unexpected error occurred. This has been logged and we'll look
+              into it. You can try reloading the page or going back to the home
+              screen.
             </p>
 
             {/* Error details — dev only */}

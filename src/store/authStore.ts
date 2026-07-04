@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { User } from '../types';
-import { useAppStore } from './appStore';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { User } from "../types";
+import { useAppStore } from "./appStore";
 
 interface AuthState {
   user: User | null;
@@ -34,7 +34,9 @@ export const useAuthStore = create<AuthState>()(
 
       updateWallet: (newBalance) =>
         set((state) => ({
-          user: state.user ? { ...state.user, walletBalance: newBalance } : state.user,
+          user: state.user
+            ? { ...state.user, walletBalance: newBalance }
+            : state.user,
         })),
 
       updateName: (name) =>
@@ -44,7 +46,9 @@ export const useAuthStore = create<AuthState>()(
 
       verifyEmail: () =>
         set((state) => ({
-          user: state.user ? { ...state.user, isEmailVerified: true } : state.user,
+          user: state.user
+            ? { ...state.user, isEmailVerified: true }
+            : state.user,
         })),
 
       logout: () => {
@@ -58,7 +62,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'engagepay-auth',
+      name: "zynk-auth",
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
@@ -70,6 +74,6 @@ export const useAuthStore = create<AuthState>()(
           useAppStore.getState().loadUserData(state.user.id);
         }
       },
-    }
-  )
+    },
+  ),
 );
