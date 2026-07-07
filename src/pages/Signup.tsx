@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Icons } from "../components/icons/Icons";
 import { useAuthStore } from "../store/authStore";
 import { cocobaseAuth, isCocobaseEnabled } from "../services/cocobase";
+import { signInWithGoogle } from "../services/googleAuth";
 import { notify } from "../utils/notify";
 import { AuthShell, GoogleIcon, LoadingSpinner } from "./Login";
 
@@ -85,7 +86,22 @@ export default function Signup() {
   const handleGoogleSignup = async () => {
     setLoading(true);
     try {
-      notify.error("Google sign-up is not configured for this build yet.");
+      if (!isCocobaseEnabled) {
+        throw new Error("The authentication service is not configured.");
+      }
+
+      const { credential } = await signInWithGoogle();
+      const result = await cocobaseAuth.googleLogin(credential, role);
+      if (!result.user) throw new Error("Unable to create account");
+
+      login(result.user, result.token ?? "cocobase_token", "cocobase_refresh");
+      notify.success(`Welcome to Zynk, ${result.user.name}! 🎉`);
+      navigate("/dashboard");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Google sign-up failed";
+      console.error("Cocobase Google signup error", error);
+      notify.error(message);
     } finally {
       setLoading(false);
     }

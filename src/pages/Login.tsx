@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Icons } from "../components/icons/Icons";
 import { useAuthStore } from "../store/authStore";
 import { cocobaseAuth, isCocobaseEnabled } from "../services/cocobase";
+import { signInWithGoogle } from "../services/googleAuth";
 import { notify } from "../utils/notify";
 
 export default function Login() {
@@ -54,7 +55,22 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      notify.error("Google sign-in is not configured for this build yet.");
+      if (!isCocobaseEnabled) {
+        throw new Error("The authentication service is not configured.");
+      }
+
+      const { credential } = await signInWithGoogle();
+      const result = await cocobaseAuth.googleLogin(credential, "earner");
+      if (!result.user) throw new Error("Unable to sign in");
+
+      login(result.user, result.token ?? "cocobase_token", "cocobase_refresh");
+      notify.success(`Welcome back, ${result.user.name}!`);
+      navigate("/dashboard");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Google sign-in failed";
+      setErrors((prev) => ({ ...prev, password: message }));
+      notify.error(message);
     } finally {
       setLoading(false);
     }
