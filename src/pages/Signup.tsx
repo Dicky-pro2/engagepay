@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Icons } from "../components/icons/Icons";
 import { useAuthStore } from "../store/authStore";
 import { mockUsers } from "../services/mockData";
+import { cocobaseAuth, isCocobaseEnabled } from "../services/cocobase";
 import { notify } from "../utils/notify";
 import { AuthShell, GoogleIcon, LoadingSpinner } from "./Login";
 
@@ -38,49 +39,79 @@ export default function Signup() {
     if (Object.keys(errs).length) return;
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-
-    const base = mockUsers[role];
-    const user = {
-      ...base,
-      id: `user_${form.email.toLowerCase()}`,
-      name: form.name,
-      email: form.email,
-      role,
-      walletBalance: 0,
-      totalEarned: 0,
-      totalSpent: 0,
-      tasksCompleted: 0,
-      tasksPosted: 0,
-    };
-
-    login(user, "mock_access_token", "mock_refresh_token");
-    notify.success(`Welcome to Zynk, ${user.name}! 🎉`);
-    setLoading(false);
-    navigate("/dashboard");
+    try {
+      if (isCocobaseEnabled) {
+        const result = await cocobaseAuth.register({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          role,
+        });
+        if (!result.user) throw new Error("Unable to create account");
+        login(
+          result.user,
+          result.token ?? "cocobase_token",
+          "cocobase_refresh",
+        );
+        notify.success(`Welcome to Zynk, ${result.user.name}! 🎉`);
+        navigate("/dashboard");
+      } else {
+        await new Promise((r) => setTimeout(r, 700));
+        const base = mockUsers[role];
+        const user = {
+          ...base,
+          id: `user_${form.email.toLowerCase()}`,
+          name: form.name,
+          email: form.email,
+          role,
+          walletBalance: 0,
+          totalEarned: 0,
+          totalSpent: 0,
+          tasksCompleted: 0,
+          tasksPosted: 0,
+        };
+        login(user, "mock_access_token", "mock_refresh_token");
+        notify.success(`Welcome to Zynk, ${user.name}! 🎉`);
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Account creation failed";
+      console.error("Cocobase signup error", error);
+      notify.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleSignup = async () => {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-    const email = "googleuser@gmail.com";
-    const base = mockUsers[role];
-    const user = {
-      ...base,
-      id: `user_${email}`,
-      name: "Google User",
-      email,
-      role,
-      walletBalance: 0,
-      totalEarned: 0,
-      totalSpent: 0,
-      tasksCompleted: 0,
-      tasksPosted: 0,
-    };
-    login(user, "mock_access_token", "mock_refresh_token");
-    notify.success("Account created with Google!");
-    setLoading(false);
-    navigate("/dashboard");
+    try {
+      if (isCocobaseEnabled) {
+        notify.error("Google sign-up is not configured for this demo yet.");
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 700));
+      const email = "googleuser@gmail.com";
+      const base = mockUsers[role];
+      const user = {
+        ...base,
+        id: `user_${email}`,
+        name: "Google User",
+        email,
+        role,
+        walletBalance: 0,
+        totalEarned: 0,
+        totalSpent: 0,
+        tasksCompleted: 0,
+        tasksPosted: 0,
+      };
+      login(user, "mock_access_token", "mock_refresh_token");
+      notify.success("Account created with Google!");
+      navigate("/dashboard");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

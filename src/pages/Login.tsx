@@ -1,26 +1,28 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Icons } from '../components/icons/Icons';
-import { useAuthStore } from '../store/authStore';
-import { mockUsers } from '../services/mockData';
-import { notify } from '../utils/notify';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Icons } from "../components/icons/Icons";
+import { useAuthStore } from "../store/authStore";
+import { mockUsers } from "../services/mockData";
+import { cocobaseAuth, isCocobaseEnabled } from "../services/cocobase";
+import { notify } from "../utils/notify";
 
 export default function Login() {
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
 
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!form.email) errs.email = 'Email is required';
-    else if (!/^\S+@\S+\.\S+$/.test(form.email)) errs.email = 'Enter a valid email';
-    if (!form.password) errs.password = 'Password is required';
-    else if (form.password.length < 6) errs.password = 'Minimum 6 characters';
+    if (!form.email) errs.email = "Email is required";
+    else if (!/^\S+@\S+\.\S+$/.test(form.email))
+      errs.email = "Enter a valid email";
+    if (!form.password) errs.password = "Password is required";
+    else if (form.password.length < 6) errs.password = "Minimum 6 characters";
     return errs;
   };
 
@@ -31,33 +33,66 @@ export default function Login() {
     if (Object.keys(errs).length) return;
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-
-    const role = form.email.includes('adv') ? 'advertiser' : 'earner';
-    const base = mockUsers[role];
-    const user = { ...base, id: `user_${form.email.toLowerCase()}`, email: form.email };
-
-    login(user, 'mock_access_token', 'mock_refresh_token');
-    notify.success(`Welcome back, ${user.name}!`);
-    setLoading(false);
-    navigate('/dashboard');
+    try {
+      if (isCocobaseEnabled) {
+        const result = await cocobaseAuth.login(form.email, form.password);
+        if (!result.user) throw new Error("Unable to sign in");
+        login(
+          result.user,
+          result.token ?? "cocobase_token",
+          "cocobase_refresh",
+        );
+        notify.success(`Welcome back, ${result.user.name}!`);
+        navigate("/dashboard");
+      } else {
+        await new Promise((r) => setTimeout(r, 700));
+        const role = form.email.includes("adv") ? "advertiser" : "earner";
+        const base = mockUsers[role];
+        const user = {
+          ...base,
+          id: `user_${form.email.toLowerCase()}`,
+          email: form.email,
+        };
+        login(user, "mock_access_token", "mock_refresh_token");
+        notify.success(`Welcome back, ${user.name}!`);
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      notify.error(error instanceof Error ? error.message : "Sign in failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-    const email = 'googleuser@gmail.com';
-    const user = { ...mockUsers.earner, id: `user_${email}`, name: 'Google User', email };
-    login(user, 'mock_access_token', 'mock_refresh_token');
-    notify.success('Signed in with Google!');
-    setLoading(false);
-    navigate('/dashboard');
+    try {
+      if (isCocobaseEnabled) {
+        notify.error("Google sign-in is not configured for this demo yet.");
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 700));
+      const email = "googleuser@gmail.com";
+      const user = {
+        ...mockUsers.earner,
+        id: `user_${email}`,
+        name: "Google User",
+        email,
+      };
+      login(user, "mock_access_token", "mock_refresh_token");
+      notify.success("Signed in with Google!");
+      navigate("/dashboard");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <AuthShell>
       <h1 className="font-sora font-bold text-2xl mb-1">Welcome back</h1>
-      <p className="text-slatec text-sm mb-6">Log in to continue earning or advertising.</p>
+      <p className="text-slatec text-sm mb-6">
+        Log in to continue earning or advertising.
+      </p>
 
       <button
         onClick={handleGoogleLogin}
@@ -77,7 +112,10 @@ export default function Login() {
         <div>
           <label className="label">Email</label>
           <div className="relative">
-            <Icons.Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none" />
+            <Icons.Mail
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none"
+            />
             <input
               type="email"
               className="input pl-10"
@@ -86,15 +124,20 @@ export default function Login() {
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
           </div>
-          {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
+          {errors.email && (
+            <p className="text-red-400 text-xs mt-1">{errors.email}</p>
+          )}
         </div>
 
         <div>
           <label className="label">Password</label>
           <div className="relative">
-            <Icons.Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none" />
+            <Icons.Lock
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none"
+            />
             <input
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               className="input pl-10 pr-10"
               placeholder="••••••••"
               value={form.password}
@@ -105,12 +148,21 @@ export default function Login() {
               onClick={() => setShowPassword((v) => !v)}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slatec hover:text-white transition-colors"
             >
-              {showPassword ? <Icons.EyeOff size={16} /> : <Icons.Eye size={16} />}
+              {showPassword ? (
+                <Icons.EyeOff size={16} />
+              ) : (
+                <Icons.Eye size={16} />
+              )}
             </button>
           </div>
-          {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
+          {errors.password && (
+            <p className="text-red-400 text-xs mt-1">{errors.password}</p>
+          )}
           <div className="text-right mt-1.5">
-            <Link to="/forgot-password" className="text-xs text-violet-light hover:underline">
+            <Link
+              to="/forgot-password"
+              className="text-xs text-violet-light hover:underline"
+            >
               Forgot password?
             </Link>
           </div>
@@ -126,20 +178,26 @@ export default function Login() {
               <LoadingSpinner /> Signing in...
             </span>
           ) : (
-            <>Sign In <Icons.ArrowRight size={18} /></>
+            <>
+              Sign In <Icons.ArrowRight size={18} />
+            </>
           )}
         </button>
       </form>
 
       <p className="text-center text-sm text-slatec mt-6">
-        Don't have an account?{' '}
-        <Link to="/signup" className="text-violet-light font-semibold hover:underline">
+        Don't have an account?{" "}
+        <Link
+          to="/signup"
+          className="text-violet-light font-semibold hover:underline"
+        >
           Sign up
         </Link>
       </p>
 
       <p className="text-center text-xs text-slatec/60 mt-3 leading-relaxed">
-        Demo tip: use an email with "adv" (e.g. adv@test.com) to log in as Advertiser.
+        Demo tip: use an email with "adv" (e.g. adv@test.com) to log in as
+        Advertiser.
       </p>
     </AuthShell>
   );
@@ -169,19 +227,48 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 export function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48">
-      <path fill="#FFC107" d="M43.6 20.5h-1.9V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
-      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-      <path fill="#4CAF50" d="M24 44c5.5 0 10.5-2.1 14.3-5.5l-6.6-5.6C29.6 34.5 26.9 35.5 24 35.5c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.6 39.6 16.2 44 24 44z"/>
-      <path fill="#1976D2" d="M43.6 20.5H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.5l6.6 5.6C41.9 36 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"/>
+      <path
+        fill="#FFC107"
+        d="M43.6 20.5h-1.9V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"
+      />
+      <path
+        fill="#FF3D00"
+        d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"
+      />
+      <path
+        fill="#4CAF50"
+        d="M24 44c5.5 0 10.5-2.1 14.3-5.5l-6.6-5.6C29.6 34.5 26.9 35.5 24 35.5c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.6 39.6 16.2 44 24 44z"
+      />
+      <path
+        fill="#1976D2"
+        d="M43.6 20.5H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.5l6.6 5.6C41.9 36 44 30.7 44 24c0-1.3-.1-2.7-.4-3.5z"
+      />
     </svg>
   );
 }
 
 export function LoadingSpinner() {
   return (
-    <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+    <svg
+      className="animate-spin"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8v8z"
+      />
     </svg>
   );
 }

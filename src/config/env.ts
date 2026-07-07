@@ -8,6 +8,10 @@ const env = {
   API_BASE_URL:
     import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api",
 
+  COCOBASE_API_KEY: import.meta.env.VITE_COCOBASE_API_KEY ?? "",
+  COCOBASE_PROJECT_ID: import.meta.env.VITE_COCOBASE_PROJECT_ID ?? "",
+  COCOBASE_BASE_URL: import.meta.env.VITE_COCOBASE_BASE_URL ?? "",
+
   // App
   APP_NAME: import.meta.env.VITE_APP_NAME ?? "Zynk",
   APP_URL: import.meta.env.VITE_APP_URL ?? "http://localhost:5173",
