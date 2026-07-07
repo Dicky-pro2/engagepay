@@ -48,21 +48,22 @@ function createLocalUser(
   };
 }
 
-function getAuthErrorMessage(error: unknown): string | null {
+function shouldUseFallback(error: unknown): boolean {
+  if (!import.meta.env.DEV) return false;
+
   if (error instanceof Error) {
     const message = error.message?.toLowerCase() ?? "";
-    if (
+    return (
       message.includes("timeout") ||
       message.includes("timed out") ||
       message.includes("network") ||
       message.includes("fetch") ||
       message.includes("gateway") ||
       message.includes("504")
-    ) {
-      return "The authentication service is currently unavailable. Continuing with a local session instead.";
-    }
+    );
   }
-  return null;
+
+  return false;
 }
 
 export function normalizeUser(
@@ -138,6 +139,82 @@ function normalizeAuthError(error: unknown): Error {
   return new Error("Unable to sign in right now.");
 }
 
+async function requestCocobase(
+  path: string,
+  options: { method: string; body?: unknown; useDataKey?: boolean },
+) {
+  if (!cocobaseClient) throw new Error("Cocobase is not configured");
+
+  const baseUrl = (env.COCOBASE_BASE_URL || "https://api.cocobase.cc").replace(
+    /\/$/,
+    "",
+  );
+  const url = `${baseUrl}${path}`;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (env.COCOBASE_API_KEY) {
+    headers["x-api-key"] = env.COCOBASE_API_KEY;
+  }
+
+  const token = cocobaseClient.auth.getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: options.method,
+    headers,
+    ...(options.body !== undefined
+      ? {
+          body: JSON.stringify(
+            options.useDataKey === false
+              ? options.body
+              : { data: options.body },
+          ),
+        }
+      : {}),
+  });
+
+  if (!response.ok) {
+    let errorDetail: unknown = null;
+    try {
+      errorDetail = await response.json();
+    } catch {
+      try {
+        errorDetail = await response.text();
+      } catch {
+        errorDetail = null;
+      }
+    }
+
+    const message =
+      typeof errorDetail === "string"
+        ? errorDetail
+        : errorDetail && typeof errorDetail === "object"
+          ? JSON.stringify(errorDetail)
+          : "Cocobase request failed";
+
+    throw new Error(message);
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  const text = await response.text();
+  if (!text.trim()) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
 export const cocobaseAuth = {
   async googleLogin(idToken: string, fallbackRole: Role = "earner") {
     if (!cocobaseClient) throw new Error("Cocobase is not configured");
@@ -151,8 +228,7 @@ export const cocobaseAuth = {
         token: cocobaseClient.auth.getToken(),
       };
     } catch (error) {
-      const fallbackMessage = getAuthErrorMessage(error);
-      if (fallbackMessage) {
+      if (shouldUseFallback(error)) {
         const fallbackUser = createLocalUser(
           "google-user@example.com",
           fallbackRole,
@@ -179,8 +255,7 @@ export const cocobaseAuth = {
         token: cocobaseClient.auth.getToken(),
       };
     } catch (error) {
-      const fallbackMessage = getAuthErrorMessage(error);
-      if (fallbackMessage) {
+      if (shouldUseFallback(error)) {
         const fallbackUser = createLocalUser(email, "earner", {
           name: email.split("@")[0],
         });
@@ -217,8 +292,7 @@ export const cocobaseAuth = {
         token: cocobaseClient.auth.getToken(),
       };
     } catch (error) {
-      const fallbackMessage = getAuthErrorMessage(error);
-      if (fallbackMessage) {
+      if (shouldUseFallback(error)) {
         const fallbackUser = createLocalUser(payload.email, payload.role, {
           name: payload.name,
           nickname: payload.nickname,
@@ -244,20 +318,29 @@ export const cocobaseAuth = {
   },
 
   async requestEmailVerification() {
-    if (!cocobaseClient) throw new Error("Cocobase is not configured");
-    await cocobaseClient.auth.requestEmailVerification();
+    await requestCocobase("/auth-collections/verify-email/send", {
+      method: "POST",
+      body: {},
+      useDataKey: false,
+    });
     return true;
   },
 
   async verifyEmail(token: string) {
-    if (!cocobaseClient) throw new Error("Cocobase is not configured");
-    await cocobaseClient.auth.verifyEmail(token);
+    await requestCocobase("/auth-collections/verify-email/verify", {
+      method: "POST",
+      body: { token },
+      useDataKey: false,
+    });
     return true;
   },
 
   async resendVerificationEmail() {
-    if (!cocobaseClient) throw new Error("Cocobase is not configured");
-    await cocobaseClient.auth.resendVerificationEmail();
+    await requestCocobase("/auth-collections/verify-email/resend", {
+      method: "POST",
+      body: {},
+      useDataKey: false,
+    });
     return true;
   },
 

@@ -20,11 +20,14 @@ export default function VerifyEmail() {
   const { user, verifyEmail } = useAuthStore();
   const { addNotification } = useAppStore();
   const [status, setStatus] = useState<Status>("verifying");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const token = searchParams.get("token");
 
   useEffect(() => {
     const verify = async () => {
+      setErrorMessage(null);
+
       // If already verified, no need to go further
       if (user?.isEmailVerified) {
         setStatus("already_verified");
@@ -51,7 +54,13 @@ export default function VerifyEmail() {
             "Your email has been verified successfully. Your account is now fully active.",
         });
         setStatus("success");
-      } catch {
+      } catch (error) {
+        console.error("Email verification failed", error);
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "We could not verify your email with the current link. Please request a fresh one.",
+        );
         setStatus("error");
       }
     };
@@ -217,8 +226,8 @@ export default function VerifyEmail() {
             </div>
             <h1 className="font-sora font-bold text-xl">Verification Failed</h1>
             <p className="text-slatec text-sm leading-relaxed">
-              This verification link is invalid or has expired. Please request a
-              new one.
+              {errorMessage ||
+                "This verification link is invalid or has expired. Please request a new one."}
             </p>
             <div className="pt-2 space-y-2">
               <button

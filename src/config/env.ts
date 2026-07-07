@@ -10,9 +10,8 @@ const env = {
 
   COCOBASE_API_KEY: import.meta.env.VITE_COCOBASE_API_KEY ?? "",
   COCOBASE_PROJECT_ID: import.meta.env.VITE_COCOBASE_PROJECT_ID ?? "",
-  COCOBASE_BASE_URL: import.meta.env.DEV
-    ? "/proxy/cocobase"
-    : (import.meta.env.VITE_COCOBASE_BASE_URL ?? "https://api.cocobase.cc"),
+  COCOBASE_BASE_URL:
+    import.meta.env.VITE_COCOBASE_BASE_URL ?? "https://api.cocobase.cc",
 
   // App
   APP_NAME: import.meta.env.VITE_APP_NAME ?? "Zynk",
