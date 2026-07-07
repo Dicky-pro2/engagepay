@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Icons } from "../components/icons/Icons";
 import { useAuthStore } from "../store/authStore";
-import { mockUsers } from "../services/mockData";
 import { cocobaseAuth, isCocobaseEnabled } from "../services/cocobase";
 import { notify } from "../utils/notify";
 
@@ -34,31 +33,19 @@ export default function Login() {
 
     setLoading(true);
     try {
-      if (isCocobaseEnabled) {
-        const result = await cocobaseAuth.login(form.email, form.password);
-        if (!result.user) throw new Error("Unable to sign in");
-        login(
-          result.user,
-          result.token ?? "cocobase_token",
-          "cocobase_refresh",
-        );
-        notify.success(`Welcome back, ${result.user.name}!`);
-        navigate("/dashboard");
-      } else {
-        await new Promise((r) => setTimeout(r, 700));
-        const role = form.email.includes("adv") ? "advertiser" : "earner";
-        const base = mockUsers[role];
-        const user = {
-          ...base,
-          id: `user_${form.email.toLowerCase()}`,
-          email: form.email,
-        };
-        login(user, "mock_access_token", "mock_refresh_token");
-        notify.success(`Welcome back, ${user.name}!`);
-        navigate("/dashboard");
+      if (!isCocobaseEnabled) {
+        throw new Error("The authentication service is not configured.");
       }
+
+      const result = await cocobaseAuth.login(form.email, form.password);
+      if (!result.user) throw new Error("Unable to sign in");
+      login(result.user, result.token ?? "cocobase_token", "cocobase_refresh");
+      notify.success(`Welcome back, ${result.user.name}!`);
+      navigate("/dashboard");
     } catch (error) {
-      notify.error(error instanceof Error ? error.message : "Sign in failed");
+      const message = error instanceof Error ? error.message : "Sign in failed";
+      setErrors((prev) => ({ ...prev, password: message }));
+      notify.error(message);
     } finally {
       setLoading(false);
     }
@@ -67,21 +54,7 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      if (isCocobaseEnabled) {
-        notify.error("Google sign-in is not configured for this demo yet.");
-        return;
-      }
-      await new Promise((r) => setTimeout(r, 700));
-      const email = "googleuser@gmail.com";
-      const user = {
-        ...mockUsers.earner,
-        id: `user_${email}`,
-        name: "Google User",
-        email,
-      };
-      login(user, "mock_access_token", "mock_refresh_token");
-      notify.success("Signed in with Google!");
-      navigate("/dashboard");
+      notify.error("Google sign-in is not configured for this build yet.");
     } finally {
       setLoading(false);
     }

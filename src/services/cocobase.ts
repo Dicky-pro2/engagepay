@@ -11,6 +11,7 @@ export const cocobaseClient = hasCocobaseConfig
       apiKey: env.COCOBASE_API_KEY,
       projectId: env.COCOBASE_PROJECT_ID,
       baseURL: env.COCOBASE_BASE_URL || undefined,
+      timeout: 60000,
     })
   : null;
 
@@ -51,6 +52,7 @@ export function normalizeUser(
   };
 }
 
+// Purpose: convert raw Cocobase documents into the app's task shape so the earner UI can render them consistently.
 function normalizeTask(document: Document<any>): Task {
   const data = document.data ?? {};
   const totalSlots = Number(data.totalSlots ?? 0);
@@ -75,14 +77,38 @@ function normalizeTask(document: Document<any>): Task {
   };
 }
 
+function normalizeAuthError(error: unknown): Error {
+  if (error instanceof Error) {
+    const message = error.message?.toLowerCase() ?? "";
+    if (message.includes("timeout") || message.includes("timed out")) {
+      return new Error(
+        "The sign-in service is taking too long. Please try again in a moment.",
+      );
+    }
+    if (
+      message.includes("unauthorized") ||
+      message.includes("invalid") ||
+      message.includes("credential")
+    ) {
+      return new Error("Incorrect email or password.");
+    }
+    return new Error(error.message);
+  }
+  return new Error("Unable to sign in right now.");
+}
+
 export const cocobaseAuth = {
   async login(email: string, password: string) {
     if (!cocobaseClient) throw new Error("Cocobase is not configured");
-    const result = await cocobaseClient.auth.login({ email, password });
-    return {
-      user: normalizeUser(result.user ?? null, "earner"),
-      token: cocobaseClient.auth.getToken(),
-    };
+    try {
+      const result = await cocobaseClient.auth.login({ email, password });
+      return {
+        user: normalizeUser(result.user ?? null, "earner"),
+        token: cocobaseClient.auth.getToken(),
+      };
+    } catch (error) {
+      throw normalizeAuthError(error);
+    }
   },
 
   async register(payload: {
@@ -115,9 +141,21 @@ export const cocobaseAuth = {
     return normalizeUser(user, "earner");
   },
 
-  async verifyEmail() {
-    if (!cocobaseClient) return true;
-    await cocobaseClient.auth.updateUser({ data: { isEmailVerified: true } });
+  async requestEmailVerification() {
+    if (!cocobaseClient) throw new Error("Cocobase is not configured");
+    await cocobaseClient.auth.requestEmailVerification();
+    return true;
+  },
+
+  async verifyEmail(token: string) {
+    if (!cocobaseClient) throw new Error("Cocobase is not configured");
+    await cocobaseClient.auth.verifyEmail(token);
+    return true;
+  },
+
+  async resendVerificationEmail() {
+    if (!cocobaseClient) throw new Error("Cocobase is not configured");
+    await cocobaseClient.auth.resendVerificationEmail();
     return true;
   },
 
@@ -129,6 +167,7 @@ export const cocobaseAuth = {
 };
 
 export const cocobaseTasks = {
+  // Purpose: load task records from Cocobase for the earner browse page and other task-driven views.
   async list() {
     if (!cocobaseClient) return [] as Task[];
     const documents = await cocobaseClient.listDocuments<any>("tasks", {

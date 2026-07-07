@@ -38,24 +38,19 @@ export default function VerifyEmail() {
       }
 
       try {
-        if (isCocobaseEnabled) {
-          await cocobaseAuth.verifyEmail();
-        } else {
-          await new Promise((r) => setTimeout(r, 1500));
+        if (!isCocobaseEnabled) {
+          throw new Error("Verification service is unavailable");
         }
 
-        if (token.length >= 8 || isCocobaseEnabled) {
-          verifyEmail();
-          addNotification({
-            type: "welcome",
-            title: "Email Verified!",
-            message:
-              "Your email has been verified successfully. Your account is now fully active.",
-          });
-          setStatus("success");
-        } else {
-          setStatus("warning");
-        }
+        await cocobaseAuth.verifyEmail(token);
+        verifyEmail();
+        addNotification({
+          type: "welcome",
+          title: "Email Verified!",
+          message:
+            "Your email has been verified successfully. Your account is now fully active.",
+        });
+        setStatus("success");
       } catch {
         setStatus("error");
       }

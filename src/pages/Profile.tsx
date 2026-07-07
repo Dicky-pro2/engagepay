@@ -5,10 +5,11 @@ import { Icons } from "../components/icons/Icons";
 import { useAuthStore } from "../store/authStore";
 import { useAppStore } from "../store/appStore";
 import { notify } from "../utils/notify";
+import { cocobaseAuth } from "../services/cocobase";
 import { LoadingSpinner } from "./Login";
 
 export default function Profile() {
-  const { user, updateName, logout, verifyEmail } = useAuthStore();
+  const { user, updateName, logout } = useAuthStore();
   const { transactions, submissions, myTasks } = useAppStore();
   const navigate = useNavigate();
 
@@ -18,10 +19,8 @@ export default function Profile() {
 
   // Verification state
   const [verifyStep, setVerifyStep] = useState<
-    "idle" | "sending" | "sent" | "verifying" | "done"
+    "idle" | "sending" | "sent" | "done"
   >("idle");
-  const [verifyCode, setVerifyCode] = useState("");
-  const [codeError, setCodeError] = useState("");
 
   const isAdvertiser = user?.role === "advertiser";
   const isVerified = user?.isEmailVerified ?? false;
@@ -48,28 +47,21 @@ export default function Profile() {
     setEditingName(false);
   };
 
-  // Step 1: send verification email (mock)
+  // Purpose: request a real verification email from Cocobase so the user can confirm ownership.
   const handleSendCode = async () => {
     setVerifyStep("sending");
-    await new Promise((r) => setTimeout(r, 1000));
-    setVerifyStep("sent");
-    notify.success("Verification code sent to your email!");
-  };
-
-  // Step 2: confirm the code (mock — any 6-digit code works)
-  const handleConfirmCode = async () => {
-    if (verifyCode.length < 6) {
-      setCodeError("Please enter the 6-digit code");
-      return;
+    try {
+      await cocobaseAuth.requestEmailVerification();
+      setVerifyStep("sent");
+      notify.success("Verification link sent to your email!");
+    } catch (error) {
+      setVerifyStep("idle");
+      notify.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to send verification email",
+      );
     }
-    setCodeError("");
-    setVerifyStep("verifying");
-    await new Promise((r) => setTimeout(r, 1000));
-
-    // Mock: any 6-char input is valid
-    verifyEmail();
-    setVerifyStep("done");
-    notify.success("Email verified successfully!");
   };
 
   return (
@@ -326,25 +318,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Step indicator */}
-              <div className="flex items-center gap-2">
-                <StepDot
-                  step={1}
-                  active={verifyStep === "idle" || verifyStep === "sending"}
-                  done={verifyStep === "sent" || verifyStep === "verifying"}
-                  label="Send Code"
-                />
-                <div className="flex-1 h-px bg-border" />
-                <StepDot
-                  step={2}
-                  active={verifyStep === "sent" || verifyStep === "verifying"}
-                  done={false}
-                  label="Enter Code"
-                />
-              </div>
-
               <AnimatePresence mode="wait">
-                {/* Step 1: send code */}
                 {(verifyStep === "idle" || verifyStep === "sending") && (
                   <motion.div
                     key="step1"
@@ -354,8 +328,8 @@ export default function Profile() {
                     className="space-y-3"
                   >
                     <p className="text-sm text-slatec">
-                      We'll send a 6-digit verification code to your email
-                      address.
+                      We will send a verification link to your email address.
+                      Open it to confirm your account.
                     </p>
                     <button
                       onClick={handleSendCode}
@@ -364,19 +338,18 @@ export default function Profile() {
                     >
                       {verifyStep === "sending" ? (
                         <>
-                          <LoadingSpinner /> Sending Code...
+                          <LoadingSpinner /> Sending Link...
                         </>
                       ) : (
                         <>
-                          <Icons.Send size={15} /> Send Verification Code
+                          <Icons.Send size={15} /> Send Verification Link
                         </>
                       )}
                     </button>
                   </motion.div>
                 )}
 
-                {/* Step 2: enter code */}
-                {(verifyStep === "sent" || verifyStep === "verifying") && (
+                {verifyStep === "sent" && (
                   <motion.div
                     key="step2"
                     initial={{ opacity: 0, x: 10 }}
@@ -385,68 +358,15 @@ export default function Profile() {
                     className="space-y-3"
                   >
                     <p className="text-sm text-slatec">
-                      Enter the 6-digit code we sent to{" "}
+                      A verification link was sent to{" "}
                       <strong className="text-white">{user?.email}</strong>.
-                      <br />
-                      <span className="text-xs">
-                        (Demo: any 6 characters work)
-                      </span>
+                      Open it from your inbox to complete verification.
                     </p>
-
-                    {/* Code input */}
-                    <div>
-                      <input
-                        className="input text-center text-xl font-sora tracking-[0.5em] font-bold"
-                        placeholder="------"
-                        maxLength={6}
-                        value={verifyCode}
-                        onChange={(e) => {
-                          setVerifyCode(e.target.value.toUpperCase());
-                          setCodeError("");
-                        }}
-                      />
-                      {codeError && (
-                        <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                          <Icons.Cancel size={12} /> {codeError}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setVerifyStep("idle");
-                          setVerifyCode("");
-                          setCodeError("");
-                        }}
-                        className="btn-secondary flex-1 text-sm flex items-center justify-center gap-1.5"
-                      >
-                        <Icons.ArrowLeft size={14} /> Back
-                      </button>
-                      <button
-                        onClick={handleConfirmCode}
-                        disabled={
-                          verifyStep === "verifying" || verifyCode.length < 6
-                        }
-                        className="btn-green flex-1 font-sora text-sm flex items-center justify-center gap-1.5 disabled:opacity-60"
-                      >
-                        {verifyStep === "verifying" ? (
-                          <>
-                            <LoadingSpinner /> Verifying...
-                          </>
-                        ) : (
-                          <>
-                            <Icons.Confirm size={14} /> Confirm Code
-                          </>
-                        )}
-                      </button>
-                    </div>
-
                     <button
                       onClick={handleSendCode}
                       className="text-xs text-slatec hover:text-violet-light transition-colors w-full text-center flex items-center justify-center gap-1"
                     >
-                      <Icons.Refresh size={12} /> Resend code
+                      <Icons.Refresh size={12} /> Resend link
                     </button>
                   </motion.div>
                 )}
@@ -522,41 +442,6 @@ function InfoRow({
       <span className="text-sm text-slatec">{label}</span>
       <span className={`text-sm font-medium text-right ${valueColor}`}>
         {value}
-      </span>
-    </div>
-  );
-}
-
-function StepDot({
-  step,
-  active,
-  done,
-  label,
-}: {
-  step: number;
-  active: boolean;
-  done: boolean;
-  label: string;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div
-        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
-          done
-            ? "bg-emerald2 border-emerald2 text-white"
-            : active
-              ? "bg-violet border-violet text-white"
-              : "bg-transparent border-border text-slatec"
-        }`}
-      >
-        {done ? <Icons.Confirm size={13} /> : step}
-      </div>
-      <span
-        className={`text-xs font-medium ${
-          active ? "text-white" : done ? "text-emerald2" : "text-slatec"
-        }`}
-      >
-        {label}
       </span>
     </div>
   );

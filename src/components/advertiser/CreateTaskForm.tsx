@@ -1,29 +1,46 @@
-import { useState } from 'react';
-import { useAuthStore } from '../../store/authStore';
-import { useAppStore } from '../../store/appStore';
-import { PLATFORMS, TASK_TYPES } from '../../services/mockData';
-import { notify } from '../../utils/notify';
-import { Icons } from '../icons/Icons';
-import { PlatformIcon } from '../icons/PlatformIcons';
-import type { Task } from '../../types';
+import { useState } from "react";
+import { useAuthStore } from "../../store/authStore";
+import { useAppStore } from "../../store/appStore";
+import { notify } from "../../utils/notify";
+import { Icons } from "../icons/Icons";
+import { PlatformIcon } from "../icons/PlatformIcons";
+import type { Task } from "../../types";
+
+const PLATFORM_OPTIONS = [
+  "Instagram",
+  "Twitter/X",
+  "TikTok",
+  "YouTube",
+  "Facebook",
+  "LinkedIn",
+] as const;
+const TASK_TYPE_OPTIONS = [
+  "Follow",
+  "Like",
+  "Comment",
+  "Share",
+  "Subscribe",
+  "View",
+] as const;
 
 const TASK_TYPE_LABELS: Record<string, string> = {
-  Follow: 'Follow Account',
-  Like: 'Like Post',
-  Comment: 'Comment on Post',
-  Share: 'Share / Retweet',
-  Subscribe: 'Subscribe Channel',
-  View: 'Watch Video (30s+)',
+  Follow: "Follow Account",
+  Like: "Like Post",
+  Comment: "Comment on Post",
+  Share: "Share / Retweet",
+  Subscribe: "Subscribe Channel",
+  View: "Watch Video (30s+)",
 };
 
 export default function CreateTaskForm() {
   const { user, updateWallet } = useAuthStore();
-  const { addTask, pushActivity, addTransaction, addNotification } = useAppStore();
+  const { addTask, pushActivity, addTransaction, addNotification } =
+    useAppStore();
 
-  const [platform, setPlatform] = useState(PLATFORMS[0]);
-  const [taskType, setTaskType] = useState<string>(TASK_TYPES[0]);
-  const [url, setUrl] = useState('');
-  const [instructions, setInstructions] = useState('');
+  const [platform, setPlatform] = useState<string>(PLATFORM_OPTIONS[0]);
+  const [taskType, setTaskType] = useState<string>(TASK_TYPE_OPTIONS[0]);
+  const [url, setUrl] = useState("");
+  const [instructions, setInstructions] = useState("");
   const [reward, setReward] = useState(10);
   const [slots, setSlots] = useState(10);
 
@@ -33,14 +50,14 @@ export default function CreateTaskForm() {
     e.preventDefault();
 
     if (!url.trim()) {
-      notify.error('Please enter a profile or post URL');
+      notify.error("Please enter a profile or post URL");
       return;
     }
     if (!user) return;
 
     if (user.walletBalance < totalCost) {
       notify.error(
-        `Not enough coins! Need ${totalCost.toLocaleString()} but have ${user.walletBalance.toLocaleString()}`
+        `Not enough coins! Need ${totalCost.toLocaleString()} but have ${user.walletBalance.toLocaleString()}`,
       );
       return;
     }
@@ -60,7 +77,7 @@ export default function CreateTaskForm() {
       totalSlots: slots,
       slotsLeft: slots,
       completionCount: 0,
-      status: 'active',
+      status: "active",
       createdAt: new Date().toISOString(),
     };
 
@@ -68,46 +85,45 @@ export default function CreateTaskForm() {
     updateWallet(user.walletBalance - totalCost);
     pushActivity(
       `New task posted: ${taskType} on ${platform} · ${reward} coins x${slots}`,
-      'violet'
+      "violet",
     );
     addTransaction({
-      type: 'task_payment',
+      type: "task_payment",
       amount: -totalCost,
       description: `Task posted: ${taskType} on ${platform}`,
     });
     addNotification({
-      type: 'new_task',
-      title: 'Task Posted!',
+      type: "new_task",
+      title: "Task Posted!",
       message: `Your ${taskType} task on ${platform} is now live with ${slots} slots.`,
     });
     notify.taskPosted(totalCost);
 
-    setUrl('');
-    setInstructions('');
+    setUrl("");
+    setInstructions("");
   };
 
   return (
     <form onSubmit={handleSubmit} className="card p-5 space-y-4">
-
       {/* Platform selector */}
       <div>
         <label className="label">Platform</label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {PLATFORMS.map((p) => (
+          {PLATFORM_OPTIONS.map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => setPlatform(p)}
               className={`rounded-xl px-2 py-3 text-center text-xs font-medium transition-all border flex flex-col items-center gap-1.5 ${
                 platform === p
-                  ? 'border-violet bg-violet/15 text-violet-light'
-                  : 'border-border text-slatec hover:border-white/20'
+                  ? "border-violet bg-violet/15 text-violet-light"
+                  : "border-border text-slatec hover:border-white/20"
               }`}
             >
               <PlatformIcon
                 platform={p}
                 size={22}
-                className={platform === p ? 'opacity-100' : 'opacity-60'}
+                className={platform === p ? "opacity-100" : "opacity-60"}
               />
               {p}
             </button>
@@ -123,7 +139,7 @@ export default function CreateTaskForm() {
           value={taskType}
           onChange={(e) => setTaskType(e.target.value)}
         >
-          {TASK_TYPES.map((t) => (
+          {TASK_TYPE_OPTIONS.map((t) => (
             <option key={t} value={t}>
               {TASK_TYPE_LABELS[t] ?? t}
             </option>

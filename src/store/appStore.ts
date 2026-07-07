@@ -8,7 +8,6 @@ import type {
   Notification,
   Submission,
 } from "../types";
-import { mockTasks } from "../services/mockData";
 
 interface UserAppData {
   tasks: Task[];
@@ -53,7 +52,7 @@ interface AppState extends UserAppData {
 const STORAGE_PREFIX = "zynk-user-data:";
 
 const defaultUserData = (): UserAppData => ({
-  tasks: [...mockTasks],
+  tasks: [],
   myTasks: [],
   activity: [],
   transactions: [],
