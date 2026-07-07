@@ -7,7 +7,12 @@ import { useAppStore } from "../store/appStore";
 import { notify } from "../utils/notify";
 import { cocobaseAuth, isCocobaseEnabled } from "../services/cocobase";
 
-type Status = "verifying" | "success" | "already_verified" | "error";
+type Status =
+  | "verifying"
+  | "success"
+  | "already_verified"
+  | "warning"
+  | "error";
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -27,8 +32,8 @@ export default function VerifyEmail() {
       }
 
       // No token in URL
-      if (!token) {
-        setStatus("error");
+      if (!token || token.trim().length < 8) {
+        setStatus("warning");
         return;
       }
 
@@ -39,7 +44,7 @@ export default function VerifyEmail() {
           await new Promise((r) => setTimeout(r, 1500));
         }
 
-        if (token.length >= 10 || isCocobaseEnabled) {
+        if (token.length >= 8 || isCocobaseEnabled) {
           verifyEmail();
           addNotification({
             type: "welcome",
@@ -49,7 +54,7 @@ export default function VerifyEmail() {
           });
           setStatus("success");
         } else {
-          setStatus("error");
+          setStatus("warning");
         }
       } catch {
         setStatus("error");
@@ -166,6 +171,42 @@ export default function VerifyEmail() {
               <Icons.Dashboard size={16} />
               Go to Dashboard
             </button>
+          </motion.div>
+        )}
+
+        {/* Warning state */}
+        {status === "warning" && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-4"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/15 flex items-center justify-center mx-auto">
+              <Icons.Cancel size={28} className="text-amber-400" />
+            </div>
+            <h1 className="font-sora font-bold text-xl">
+              Verification Link Warning
+            </h1>
+            <p className="text-slatec text-sm leading-relaxed">
+              This verification link looks incomplete or invalid. Please copy
+              the full link from your email or request a fresh one.
+            </p>
+            <div className="pt-2 space-y-2">
+              <button
+                onClick={() => navigate("/resend-verification")}
+                className="btn-primary w-full font-sora flex items-center justify-center gap-2"
+              >
+                <Icons.Mail size={16} />
+                Resend Verification Email
+              </button>
+              <Link
+                to={user ? "/dashboard" : "/login"}
+                className="btn-secondary w-full flex items-center justify-center gap-2 text-sm"
+              >
+                <Icons.ArrowLeft size={14} />
+                {user ? "Back to Dashboard" : "Back to Login"}
+              </Link>
+            </div>
           </motion.div>
         )}
 

@@ -1,21 +1,36 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Icons } from '../components/icons/Icons';
-import { notify } from '../utils/notify';
-import { AuthShell, LoadingSpinner } from './Login';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Icons } from "../components/icons/Icons";
+import { cocobaseAuth, isCocobaseEnabled } from "../services/cocobase";
+import { notify } from "../utils/notify";
+import { AuthShell, LoadingSpinner } from "./Login";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) { notify.error('Please enter your email'); return; }
+    if (!email) {
+      notify.error("Please enter your email");
+      return;
+    }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setSent(true);
-    setLoading(false);
+    try {
+      if (isCocobaseEnabled) {
+        await cocobaseAuth.forgotPassword(email);
+      } else {
+        await new Promise((r) => setTimeout(r, 800));
+      }
+      setSent(true);
+    } catch (error) {
+      notify.error(
+        error instanceof Error ? error.message : "Unable to send reset link",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,9 +47,11 @@ export default function ForgotPassword() {
           <div className="text-4xl mb-3">📬</div>
           <h2 className="font-sora font-bold text-xl mb-2">Check your email</h2>
           <p className="text-slatec text-sm">
-            We sent a reset link to{' '}
-            <strong className="text-white">{email}</strong>.{' '}
-            (Demo — no real email sent.)
+            We sent a reset link to{" "}
+            <strong className="text-white">{email}</strong>.
+            {isCocobaseEnabled
+              ? " Please check your inbox."
+              : " Demo mode: no real email was sent."}
           </p>
         </div>
       ) : (
@@ -65,7 +82,13 @@ export default function ForgotPassword() {
               disabled={loading}
               className="btn-primary w-full font-sora flex items-center justify-center gap-2"
             >
-              {loading ? <><LoadingSpinner /> Sending...</> : 'Send Reset Link'}
+              {loading ? (
+                <>
+                  <LoadingSpinner /> Sending...
+                </>
+              ) : (
+                "Send Reset Link"
+              )}
             </button>
           </form>
         </>

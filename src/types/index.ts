@@ -1,8 +1,9 @@
-export type Role = 'advertiser' | 'earner' | 'admin';
+export type Role = "advertiser" | "earner" | "admin";
 
 export interface User {
   id: string;
   name: string;
+  nickname?: string | null;
   email: string;
   role: Role;
   avatar: string | null;
@@ -27,18 +28,24 @@ export interface Task {
   totalSlots: number;
   slotsLeft: number;
   completionCount: number;
-  status: 'active' | 'paused' | 'completed' | 'cancelled';
+  status: "active" | "paused" | "completed" | "cancelled";
   createdAt: string;
 }
 
 export interface ActivityItem {
   id: string;
   msg: string;
-  type: 'violet' | 'green';
+  type: "violet" | "green";
   time: string;
 }
 
-export type TransactionType = 'deposit' | 'withdrawal' | 'task_payment' | 'task_earning' | 'refund' | 'bonus';
+export type TransactionType =
+  | "deposit"
+  | "withdrawal"
+  | "task_payment"
+  | "task_earning"
+  | "refund"
+  | "bonus";
 
 export interface Transaction {
   id: string;
@@ -61,15 +68,23 @@ export interface Task {
   totalSlots: number;
   slotsLeft: number;
   completionCount: number;
-  status: 'active' | 'paused' | 'completed' | 'cancelled';
+  status: "active" | "paused" | "completed" | "cancelled";
   createdAt: string;
   completedByCurrentUser?: boolean;
   taskSubmissions?: TaskSubmission[];
 }
 
-export type WithdrawalMethod = 'bank_transfer' | 'paypal' | 'crypto' | 'mobile_money';
+export type WithdrawalMethod =
+  | "bank_transfer"
+  | "paypal"
+  | "crypto"
+  | "mobile_money";
 
-export type WithdrawalStatus = 'pending' | 'processing' | 'completed' | 'rejected';
+export type WithdrawalStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "rejected";
 
 export interface Withdrawal {
   id: string;
@@ -81,13 +96,13 @@ export interface Withdrawal {
 }
 
 export type NotificationType =
-  | 'task_completed'
-  | 'task_approved'
-  | 'task_rejected'
-  | 'deposit_success'
-  | 'withdrawal_processed'
-  | 'new_task'
-  | 'welcome';
+  | "task_completed"
+  | "task_approved"
+  | "task_rejected"
+  | "deposit_success"
+  | "withdrawal_processed"
+  | "new_task"
+  | "welcome";
 
 export interface Notification {
   id: string;
@@ -106,7 +121,7 @@ export interface Submission {
   taskType: string;
   reward: number;
   proof: string;
-  status: 'approved' | 'pending' | 'rejected';
+  status: "approved" | "pending" | "rejected";
   createdAt: string;
 }
 
@@ -115,7 +130,7 @@ export interface TaskSubmission {
   earnerName: string;
   earnerId: string;
   proof: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   reviewNote?: string;
   createdAt: string;
 }

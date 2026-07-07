@@ -15,20 +15,38 @@ export default function Signup() {
 
   const initialRole =
     searchParams.get("role") === "advertiser" ? "advertiser" : "earner";
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({
+    name: "",
+    nickname: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [role, setRole] = useState<"advertiser" | "earner">(initialRole);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const errs: Record<string, string> = {};
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
     if (!form.name.trim()) errs.name = "Name is required";
+    if (!form.nickname.trim()) errs.nickname = "Nickname is required";
     if (!form.email) errs.email = "Email is required";
     else if (!/^\S+@\S+\.\S+$/.test(form.email))
       errs.email = "Enter a valid email";
     if (!form.password) errs.password = "Password is required";
-    else if (form.password.length < 6) errs.password = "Minimum 6 characters";
+    else if (!passwordRegex.test(form.password)) {
+      errs.password = "Use 8+ chars with upper, lower, number and symbol";
+    }
+    if (!form.confirmPassword)
+      errs.confirmPassword = "Please confirm your password";
+    else if (form.password !== form.confirmPassword) {
+      errs.confirmPassword = "Passwords do not match";
+    }
     return errs;
   };
 
@@ -43,6 +61,7 @@ export default function Signup() {
       if (isCocobaseEnabled) {
         const result = await cocobaseAuth.register({
           name: form.name,
+          nickname: form.nickname.trim(),
           email: form.email,
           password: form.password,
           role,
@@ -62,6 +81,7 @@ export default function Signup() {
           ...base,
           id: `user_${form.email.toLowerCase()}`,
           name: form.name,
+          nickname: form.nickname.trim(),
           email: form.email,
           role,
           walletBalance: 0,
@@ -173,6 +193,25 @@ export default function Signup() {
         </div>
 
         <div>
+          <label className="label">Nickname</label>
+          <div className="relative">
+            <Icons.User
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none"
+            />
+            <input
+              className="input pl-10"
+              placeholder="johndoe"
+              value={form.nickname}
+              onChange={(e) => setForm({ ...form, nickname: e.target.value })}
+            />
+          </div>
+          {errors.nickname && (
+            <p className="text-red-400 text-xs mt-1">{errors.nickname}</p>
+          )}
+        </div>
+
+        <div>
           <label className="label">Email</label>
           <div className="relative">
             <Icons.Mail
@@ -202,7 +241,7 @@ export default function Signup() {
             <input
               type={showPassword ? "text" : "password"}
               className="input pl-10 pr-10"
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
@@ -220,6 +259,41 @@ export default function Signup() {
           </div>
           {errors.password && (
             <p className="text-red-400 text-xs mt-1">{errors.password}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="label">Confirm Password</label>
+          <div className="relative">
+            <Icons.Lock
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slatec pointer-events-none"
+            />
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              className="input pl-10 pr-10"
+              placeholder="Re-enter password"
+              value={form.confirmPassword}
+              onChange={(e) =>
+                setForm({ ...form, confirmPassword: e.target.value })
+              }
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((v) => !v)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slatec hover:text-white transition-colors"
+            >
+              {showConfirmPassword ? (
+                <Icons.EyeOff size={16} />
+              ) : (
+                <Icons.Eye size={16} />
+              )}
+            </button>
+          </div>
+          {errors.confirmPassword && (
+            <p className="text-red-400 text-xs mt-1">
+              {errors.confirmPassword}
+            </p>
           )}
         </div>
 
