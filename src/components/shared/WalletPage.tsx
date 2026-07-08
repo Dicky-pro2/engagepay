@@ -1,12 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Icons } from "../icons/Icons";
 import { useAuthStore } from "../../store/authStore";
 import { useAppStore } from "../../store/appStore";
 import { notify } from "../../utils/notify";
+import env from "../../config/env";
 import type { TransactionType } from "../../types";
 
 const FUND_AMOUNTS = [100, 500, 1000, 5000];
+const PAYSTACK_SCRIPT_URL = "https://js.paystack.co/v1/inline.js";
+
+declare global {
+  interface Window {
+    PaystackPop?: {
+      setup: (options: {
+        key: string;
+        email: string;
+        amount: number;
+        currency?: string;
+        ref?: string;
+        callback: (response: { reference: string }) => void;
+        onClose: () => void;
+      }) => {
+        openIframe: () => void;
+      };
+    };
+  }
+}
 
 const TX_META: Record<
   TransactionType,
@@ -49,6 +69,18 @@ export default function WalletPage() {
   const { transactions, addTransaction } = useAppStore();
   const [selectedAmt, setSelectedAmt] = useState(500);
   const [customAmt, setCustomAmt] = useState("");
+  const [isPaying, setIsPaying] = useState(false);
+
+  useEffect(() => {
+    if (document.querySelector(`script[src="${PAYSTACK_SCRIPT_URL}"]`)) {
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = PAYSTACK_SCRIPT_URL;
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
 
   const handleFund = () => {
     const amt = customAmt ? Number(customAmt) : selectedAmt;
@@ -57,14 +89,46 @@ export default function WalletPage() {
       return;
     }
 
-    updateWallet(user.walletBalance + amt);
-    addTransaction({
-      type: "deposit",
-      amount: amt,
-      description: "Wallet top-up",
+    if (!env.PAYSTACK_PUBLIC_KEY) {
+      notify.error("Paystack is not configured yet.");
+      return;
+    }
+
+    const paystack = window.PaystackPop;
+    if (!paystack) {
+      notify.error(
+        "Payment provider is still loading. Please try again in a moment.",
+      );
+      return;
+    }
+
+    setIsPaying(true);
+
+    const handler = paystack.setup({
+      key: env.PAYSTACK_PUBLIC_KEY,
+      email: user.email,
+      amount: Math.round(amt * 100),
+      currency: "NGN",
+      ref: `wallet-${user.id}-${Date.now()}`,
+      callback: (response) => {
+        setIsPaying(false);
+        updateWallet(user.walletBalance + amt);
+        addTransaction({
+          type: "deposit",
+          amount: amt,
+          description: "Wallet top-up",
+        });
+        notify.walletFunded(amt);
+        notify.success(`Payment confirmed. Reference: ${response.reference}`);
+        setCustomAmt("");
+      },
+      onClose: () => {
+        setIsPaying(false);
+        notify.error("Payment cancelled");
+      },
     });
-    notify.walletFunded(amt);
-    setCustomAmt("");
+
+    handler.openIframe();
   };
 
   return (
@@ -100,7 +164,7 @@ export default function WalletPage() {
           <Icons.CreditCard size={16} /> Fund Wallet
         </h2>
         <p className="text-slatec text-sm mb-4">
-          Choose an amount to add (demo — no real payment).
+          Choose an amount to add and pay securely with Paystack.
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
@@ -133,9 +197,11 @@ export default function WalletPage() {
 
         <button
           onClick={handleFund}
-          className="btn-primary w-full font-sora flex items-center justify-center gap-2"
+          disabled={isPaying}
+          className="btn-primary w-full font-sora flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <Icons.CoinIn size={16} /> Add Coins to Wallet
+          <Icons.CoinIn size={16} />
+          {isPaying ? "Processing payment..." : "Pay with Paystack"}
         </button>
       </div>
 
