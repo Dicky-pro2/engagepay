@@ -14,6 +14,7 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const isAdvertiser = user?.role === "advertiser";
+  const isAdmin = user?.role === "admin";
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -49,6 +50,16 @@ export default function DashboardLayout() {
             end: false,
           },
         ]),
+    ...(isAdmin
+      ? [
+          {
+            to: "/dashboard/admin",
+            icon: Icons.Settings,
+            label: "Admin",
+            end: false,
+          },
+        ]
+      : []),
   ];
 
   return (

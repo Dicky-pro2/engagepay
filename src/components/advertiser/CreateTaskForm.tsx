@@ -5,6 +5,7 @@ import { cocobaseTasks } from "../../services/cocobase";
 import { notify } from "../../utils/notify";
 import { Icons } from "../icons/Icons";
 import { PlatformIcon } from "../icons/PlatformIcons";
+import { calculateAdvertiserImpact } from "../../utils/transactionMath";
 
 const PLATFORM_OPTIONS = [
   "Instagram",
@@ -45,6 +46,7 @@ export default function CreateTaskForm() {
   const [slots, setSlots] = useState(10);
 
   const totalCost = reward * slots;
+  const impactPreview = calculateAdvertiserImpact(totalCost);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,14 +215,23 @@ export default function CreateTaskForm() {
       </div>
 
       {/* Total cost preview */}
-      <div className="bg-navy-2 border border-border rounded-xl px-4 py-2.5 flex items-center justify-between text-sm">
-        <span className="text-slatec flex items-center gap-1.5">
-          <Icons.CoinOut size={14} /> Total cost
-        </span>
-        <span className="font-sora font-bold text-amber-400 flex items-center gap-1.5">
-          <Icons.Wallet size={14} />
-          {totalCost.toLocaleString()} coins
-        </span>
+      <div className="bg-navy-2 border border-border rounded-xl px-4 py-2.5 space-y-2 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-slatec flex items-center gap-1.5">
+            <Icons.CoinOut size={14} /> Total cost
+          </span>
+          <span className="font-sora font-bold text-amber-400 flex items-center gap-1.5">
+            <Icons.Wallet size={14} />
+            {totalCost.toLocaleString()} coins
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-slatec">Estimated impact</span>
+          <span className="font-sora font-bold text-violet-light">
+            {impactPreview.follows} follows • {impactPreview.likes} likes •{" "}
+            {impactPreview.engagement} engagement
+          </span>
+        </div>
       </div>
 
       <button

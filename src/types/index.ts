@@ -77,6 +77,9 @@ export interface Withdrawal {
   amount: number;
   method: WithdrawalMethod;
   accountDetails: string;
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
   status: WithdrawalStatus;
   createdAt: string;
 }

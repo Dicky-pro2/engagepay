@@ -5,6 +5,10 @@ import { useAppStore } from "../../store/appStore";
 import { notify } from "../../utils/notify";
 import { Icons } from "../icons/Icons";
 import type { WithdrawalMethod, TransactionType } from "../../types";
+import {
+  calculateNetWithdrawal,
+  calculateWithdrawalFee,
+} from "../../utils/transactionMath";
 
 const METHODS: {
   key: WithdrawalMethod;
@@ -40,6 +44,31 @@ const METHODS: {
 
 const MIN_WITHDRAWAL = 100;
 
+const NIGERIAN_BANKS = [
+  "Access Bank",
+  "Citibank Nigeria",
+  "Ecobank Nigeria",
+  "FCMB",
+  "Fidelity Bank",
+  "First Bank of Nigeria",
+  "GTBank",
+  "Jaiz Bank",
+  "Keystone Bank",
+  "Moniepoint",
+  "Opay",
+  "PalmPay",
+  "Polaris Bank",
+  "Providus Bank",
+  "Stanbic IBTC",
+  "Sterling Bank",
+  "Suntrust Bank",
+  "UBA",
+  "Union Bank",
+  "Unity Bank",
+  "Wema Bank",
+  "Zenith Bank",
+];
+
 const TX_META: Record<
   TransactionType,
   { icon: React.ReactNode; color: string }
@@ -52,20 +81,30 @@ const TX_META: Record<
   bonus: { icon: <Icons.PiggyBank size={15} />, color: "text-amber-400" },
 };
 
-const STATUS_DISPLAY: Record<
-  string,
-  { icon: React.ReactNode; color: string }
-> = {
-  pending: { icon: <Icons.Clock size={14} />, color: "text-amber-400" },
-  processing: { icon: <Icons.Clock size={14} />, color: "text-violet-light" },
-  completed: { icon: <Icons.Approve size={14} />, color: "text-emerald2" },
-  rejected: { icon: <Icons.Cancel size={14} />, color: "text-red-400" },
-};
+const STATUS_DISPLAY: Record<string, { icon: React.ReactNode; color: string }> =
+  {
+    pending: { icon: <Icons.Clock size={14} />, color: "text-amber-400" },
+    processing: { icon: <Icons.Clock size={14} />, color: "text-violet-light" },
+    completed: { icon: <Icons.Approve size={14} />, color: "text-emerald2" },
+    rejected: { icon: <Icons.Cancel size={14} />, color: "text-red-400" },
+  };
 
 const tabs = [
-  { key: "withdraw" as const, label: "Withdraw", icon: <Icons.CoinOut size={14} /> },
-  { key: "history" as const, label: "Earnings History", icon: <Icons.Clock size={14} /> },
-  { key: "withdrawals" as const, label: "My Withdrawals", icon: <Icons.Refresh size={14} /> },
+  {
+    key: "withdraw" as const,
+    label: "Withdraw",
+    icon: <Icons.CoinOut size={14} />,
+  },
+  {
+    key: "history" as const,
+    label: "Earnings History",
+    icon: <Icons.Clock size={14} />,
+  },
+  {
+    key: "withdrawals" as const,
+    label: "My Withdrawals",
+    icon: <Icons.Refresh size={14} />,
+  },
 ];
 
 export default function EarnerWallet() {
@@ -82,14 +121,23 @@ export default function EarnerWallet() {
   const [method, setMethod] = useState<WithdrawalMethod>("bank_transfer");
   const [amount, setAmount] = useState("");
   const [accountDetails, setAccountDetails] = useState("");
-  const [activeTab, setActiveTab] = useState<"withdraw" | "history" | "withdrawals">("withdraw");
+  const [accountName, setAccountName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [bankName, setBankName] = useState(NIGERIAN_BANKS[0]);
+  const [activeTab, setActiveTab] = useState<
+    "withdraw" | "history" | "withdrawals"
+  >("withdraw");
 
   const earningTransactions = transactions.filter(
     (tx) =>
       tx.type === "task_earning" ||
       tx.type === "withdrawal" ||
-      tx.type === "bonus"
+      tx.type === "bonus",
   );
+
+  const parsedAmount = Number(amount);
+  const fee = amount ? calculateWithdrawalFee(parsedAmount) : 0;
+  const netAmount = amount ? calculateNetWithdrawal(parsedAmount) : 0;
 
   const handleWithdraw = () => {
     const amt = Number(amount);
@@ -101,27 +149,39 @@ export default function EarnerWallet() {
       notify.error("Insufficient balance");
       return;
     }
-    if (!accountDetails.trim()) {
+    if (method === "bank_transfer") {
+      if (!bankName.trim() || !accountName.trim() || !accountNumber.trim()) {
+        notify.error("Please complete your bank account details");
+        return;
+      }
+    } else if (!accountDetails.trim()) {
       notify.error("Please enter your account details");
       return;
     }
 
     const methodLabel = METHODS.find((m) => m.key === method)?.label;
+    const formattedAccountDetails =
+      method === "bank_transfer"
+        ? `Bank: ${bankName} | Account Name: ${accountName} | Account Number: ${accountNumber}`
+        : accountDetails.trim();
 
     updateWallet(user.walletBalance - amt);
     addTransaction({
       type: "withdrawal",
       amount: -amt,
-      description: `Withdrawal via ${methodLabel}`,
+      description: `Withdrawal via ${methodLabel} (${fee.toLocaleString()} fee)`,
     });
     addWithdrawal({
       amount: amt,
       method,
-      accountDetails: accountDetails.trim(),
+      accountDetails: formattedAccountDetails,
+      bankName: method === "bank_transfer" ? bankName : undefined,
+      accountName: method === "bank_transfer" ? accountName : undefined,
+      accountNumber: method === "bank_transfer" ? accountNumber : undefined,
     });
     pushActivity(
       `Withdrawal of ${amt.toLocaleString()} coins requested`,
-      "violet"
+      "violet",
     );
     addNotification({
       type: "withdrawal_processed",
@@ -132,6 +192,9 @@ export default function EarnerWallet() {
 
     setAmount("");
     setAccountDetails("");
+    setAccountName("");
+    setAccountNumber("");
+    setBankName(NIGERIAN_BANKS[0]);
   };
 
   const selectedMethod = METHODS.find((m) => m.key === method)!;
@@ -237,15 +300,54 @@ export default function EarnerWallet() {
               ))}
             </div>
 
-            <div>
-              <label className="label">{selectedMethod.label} Details</label>
-              <textarea
-                className="input min-h-[80px] resize-none"
-                placeholder={selectedMethod.placeholder}
-                value={accountDetails}
-                onChange={(e) => setAccountDetails(e.target.value)}
-              />
-            </div>
+            {method === "bank_transfer" ? (
+              <div className="space-y-3">
+                <div>
+                  <label className="label">Select Bank</label>
+                  <select
+                    className="input"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                  >
+                    {NIGERIAN_BANKS.map((bank) => (
+                      <option key={bank} value={bank}>
+                        {bank}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label">Account Name</label>
+                  <input
+                    className="input"
+                    placeholder="e.g. John Doe"
+                    value={accountName}
+                    onChange={(e) => setAccountName(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="label">Account Number</label>
+                  <input
+                    className="input"
+                    placeholder="e.g. 0123456789"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="label">{selectedMethod.label} Details</label>
+                <textarea
+                  className="input min-h-[80px] resize-none"
+                  placeholder={selectedMethod.placeholder}
+                  value={accountDetails}
+                  onChange={(e) => setAccountDetails(e.target.value)}
+                />
+              </div>
+            )}
 
             <div>
               <label className="label">Amount (coins)</label>
@@ -260,12 +362,26 @@ export default function EarnerWallet() {
               />
             </div>
 
-            <div className="bg-navy-2 border border-border rounded-xl px-4 py-2.5 flex items-center justify-between text-sm">
-              <span className="text-slatec">You'll receive</span>
-              <span className="font-sora font-bold text-emerald2 flex items-center gap-1.5">
-                <Icons.CoinIn size={14} />
-                {amount ? Number(amount).toLocaleString() : "0"} coins
-              </span>
+            <div className="bg-navy-2 border border-border rounded-xl px-4 py-2.5 space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-slatec">Withdrawal amount</span>
+                <span className="font-sora font-bold text-white">
+                  {amount ? Number(amount).toLocaleString() : "0"} coins
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slatec">Platform fee (0.5%)</span>
+                <span className="font-sora font-bold text-amber-400">
+                  {amount ? fee.toLocaleString() : "0"} coins
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slatec">You'll receive</span>
+                <span className="font-sora font-bold text-emerald2 flex items-center gap-1.5">
+                  <Icons.CoinIn size={14} />
+                  {amount ? netAmount.toLocaleString() : "0"} coins
+                </span>
+              </div>
             </div>
 
             <button
@@ -293,10 +409,7 @@ export default function EarnerWallet() {
           >
             {earningTransactions.length === 0 ? (
               <div className="card p-10 text-center text-slatec">
-                <Icons.Wallet
-                  size={32}
-                  className="mx-auto mb-3 opacity-30"
-                />
+                <Icons.Wallet size={32} className="mx-auto mb-3 opacity-30" />
                 <p>No earnings yet — complete tasks to start earning!</p>
               </div>
             ) : (
@@ -352,10 +465,7 @@ export default function EarnerWallet() {
           >
             {withdrawals.length === 0 ? (
               <div className="card p-10 text-center text-slatec">
-                <Icons.Refresh
-                  size={32}
-                  className="mx-auto mb-3 opacity-30"
-                />
+                <Icons.Refresh size={32} className="mx-auto mb-3 opacity-30" />
                 <p>No withdrawal requests yet.</p>
               </div>
             ) : (
