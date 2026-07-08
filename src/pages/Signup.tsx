@@ -66,7 +66,11 @@ export default function Signup() {
         role,
       });
       if (!result.user) throw new Error("Unable to create account");
-      login(result.user, result.token ?? "cocobase_token", "cocobase_refresh");
+      login(
+        result.user,
+        result.token ?? "backend_token",
+        result.refreshToken ?? "backend_refresh",
+      );
       notify.success(`Welcome to Zynk, ${result.user.name}! 🎉`);
       navigate("/dashboard");
     } catch (error) {
@@ -86,7 +90,11 @@ export default function Signup() {
       const result = await cocobaseAuth.googleLogin(credential, role);
       if (!result.user) throw new Error("Unable to create account");
 
-      login(result.user, result.token ?? "cocobase_token", "cocobase_refresh");
+      login(
+        result.user,
+        result.token ?? "backend_token",
+        result.refreshToken ?? "backend_refresh",
+      );
       notify.success(`Welcome to Zynk, ${result.user.name}! 🎉`);
       navigate("/dashboard");
     } catch (error) {

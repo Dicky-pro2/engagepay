@@ -1,5 +1,6 @@
 import { Cocobase, type AppUser, type Document } from "cocobase";
 import env from "../config/env";
+import { authAPI } from "./api";
 import type { Role, Task, User } from "../types";
 
 const hasCocobaseConfig = Boolean(
@@ -22,48 +23,6 @@ function normalizeRole(value: unknown, fallback: Role = "earner"): Role {
     return value;
   }
   return fallback;
-}
-
-function createLocalUser(
-  email: string,
-  fallbackRole: Role = "earner",
-  overrides?: Partial<User>,
-): User {
-  const safeName = overrides?.name?.trim() || email.split("@")[0] || "User";
-  const safeNickname = overrides?.nickname?.trim() || safeName;
-
-  return {
-    id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    name: safeName,
-    nickname: safeNickname,
-    email,
-    role: overrides?.role ?? fallbackRole,
-    avatar: null,
-    walletBalance: 0,
-    totalEarned: 0,
-    totalSpent: 0,
-    tasksCompleted: 0,
-    tasksPosted: 0,
-    isEmailVerified: false,
-  };
-}
-
-function shouldUseFallback(error: unknown): boolean {
-  if (!import.meta.env.DEV) return false;
-
-  if (error instanceof Error) {
-    const message = error.message?.toLowerCase() ?? "";
-    return (
-      message.includes("timeout") ||
-      message.includes("timed out") ||
-      message.includes("network") ||
-      message.includes("fetch") ||
-      message.includes("gateway") ||
-      message.includes("504")
-    );
-  }
-
-  return false;
 }
 
 export function normalizeUser(
@@ -116,6 +75,65 @@ function normalizeTask(document: Document<any>): Task {
     completionCount,
     status: data.status ?? "active",
     createdAt: data.createdAt ?? document.created_at,
+  };
+}
+
+function normalizeBackendUser(
+  payload: unknown,
+  fallbackRole: Role = "earner",
+): User | null {
+  if (!payload || typeof payload !== "object") return null;
+
+  const data = payload as Record<string, any>;
+  const role = normalizeRole(
+    data.role ?? data.userRole ?? data.roles?.[0] ?? data.type,
+    fallbackRole,
+  );
+
+  return {
+    id: data.id ?? data._id ?? data.userId ?? data.uuid ?? `user-${Date.now()}`,
+    name:
+      data.name ??
+      data.fullName ??
+      data.displayName ??
+      data.username ??
+      data.email?.split("@")[0] ??
+      "User",
+    nickname: data.nickname ?? data.nickName ?? data.username ?? null,
+    email: data.email ?? data.username ?? "",
+    role,
+    avatar: data.avatar ?? data.profilePicture ?? null,
+    walletBalance: Number(data.walletBalance ?? data.balance ?? 0),
+    totalEarned: Number(data.totalEarned ?? 0),
+    totalSpent: Number(data.totalSpent ?? 0),
+    tasksCompleted: Number(data.tasksCompleted ?? data.tasks_completed ?? 0),
+    tasksPosted: Number(data.tasksPosted ?? data.tasks_posted ?? 0),
+    isEmailVerified: Boolean(
+      data.isEmailVerified ?? data.emailVerified ?? data.verified ?? true,
+    ),
+  };
+}
+
+function normalizeAuthResult(
+  responseData: unknown,
+  fallbackRole: Role = "earner",
+) {
+  const root = (responseData ?? {}) as Record<string, any>;
+  const body = (root.data ?? root) as Record<string, any>;
+  const userPayload = body.user ?? body.data?.user ?? body.profile ?? body;
+  const accessToken =
+    body.accessToken ??
+    body.token ??
+    body.data?.accessToken ??
+    body.data?.token ??
+    null;
+  const refreshToken =
+    body.refreshToken ?? body.data?.refreshToken ?? body.refresh_token ?? null;
+
+  return {
+    user: normalizeBackendUser(userPayload, fallbackRole),
+    token: accessToken,
+    refreshToken,
   };
 }
 
@@ -217,76 +235,37 @@ async function requestCocobase(
 
 export const cocobaseAuth = {
   async googleLogin(idToken: string, fallbackRole: Role = "earner") {
-    if (!cocobaseClient) {
-      const fallbackUser = createLocalUser(
-        "google-user@example.com",
-        fallbackRole,
-        {
-          name: "Google User",
-          role: fallbackRole,
-        },
-      );
-      console.warn("Cocobase auth unavailable; using local fallback session");
-      return {
-        user: fallbackUser,
-        token: `local-token-${fallbackUser.id}`,
-      };
-    }
     try {
-      const user = await cocobaseClient.auth.loginWithGoogle({
-        idToken,
-        platform: "web",
-      });
+      const response = await authAPI.googleAuth(idToken, fallbackRole);
+      const { user, token, refreshToken } = normalizeAuthResult(
+        response.data,
+        fallbackRole,
+      );
+      if (!user) throw new Error("Unable to sign in");
       return {
-        user: normalizeUser(user ?? null, fallbackRole),
-        token: cocobaseClient.auth.getToken(),
+        user,
+        token: token ?? "backend_token",
+        refreshToken: refreshToken ?? "backend_refresh",
       };
     } catch (error) {
-      if (shouldUseFallback(error)) {
-        const fallbackUser = createLocalUser(
-          "google-user@example.com",
-          fallbackRole,
-          {
-            name: "Google User",
-            role: fallbackRole,
-          },
-        );
-        return {
-          user: fallbackUser,
-          token: `local-token-${fallbackUser.id}`,
-        };
-      }
       throw normalizeAuthError(error);
     }
   },
 
   async login(email: string, password: string) {
-    if (!cocobaseClient) {
-      const fallbackUser = createLocalUser(email, "earner", {
-        name: email.split("@")[0],
-      });
-      console.warn("Cocobase auth unavailable; using local fallback session");
-      return {
-        user: fallbackUser,
-        token: `local-token-${fallbackUser.id}`,
-      };
-    }
     try {
-      const result = await cocobaseClient.auth.login({ email, password });
+      const response = await authAPI.login({ email, password });
+      const { user, token, refreshToken } = normalizeAuthResult(
+        response.data,
+        "earner",
+      );
+      if (!user) throw new Error("Unable to sign in");
       return {
-        user: normalizeUser(result.user ?? null, "earner"),
-        token: cocobaseClient.auth.getToken(),
+        user,
+        token: token ?? "backend_token",
+        refreshToken: refreshToken ?? "backend_refresh",
       };
     } catch (error) {
-      if (shouldUseFallback(error)) {
-        const fallbackUser = createLocalUser(email, "earner", {
-          name: email.split("@")[0],
-        });
-        return {
-          user: fallbackUser,
-          token: `local-token-${fallbackUser.id}`,
-        };
-      }
       throw normalizeAuthError(error);
     }
   },
@@ -298,49 +277,24 @@ export const cocobaseAuth = {
     password: string;
     role: Role;
   }) {
-    if (!cocobaseClient) {
-      const fallbackUser = createLocalUser(payload.email, payload.role, {
-        name: payload.name,
-        nickname: payload.nickname,
-        role: payload.role,
-      });
-      console.warn("Cocobase auth unavailable; using local fallback session");
-      return {
-        user: fallbackUser,
-        token: `local-token-${fallbackUser.id}`,
-      };
-    }
     try {
-      const result = await cocobaseClient.auth.register({
+      const response = await authAPI.register({
+        name: payload.name,
         email: payload.email,
         password: payload.password,
-        data: {
-          name: payload.name,
-          nickname: payload.nickname ?? null,
-          role: payload.role,
-          isEmailVerified: false,
-        },
+        role: payload.role,
       });
+      const { user, token, refreshToken } = normalizeAuthResult(
+        response.data,
+        payload.role,
+      );
+      if (!user) throw new Error("Unable to create account");
       return {
-        user: normalizeUser(result.user ?? null, payload.role),
-        token: cocobaseClient.auth.getToken(),
+        user,
+        token: token ?? "backend_token",
+        refreshToken: refreshToken ?? "backend_refresh",
       };
     } catch (error) {
-      if (shouldUseFallback(error)) {
-        const fallbackUser = createLocalUser(payload.email, payload.role, {
-          name: payload.name,
-          nickname: payload.nickname,
-          role: payload.role,
-        });
-        console.warn(
-          "Cocobase auth failed, using local fallback session",
-          error,
-        );
-        return {
-          user: fallbackUser,
-          token: `local-token-${fallbackUser.id}`,
-        };
-      }
       throw normalizeAuthError(error);
     }
   },

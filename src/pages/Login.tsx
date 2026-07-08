@@ -36,7 +36,11 @@ export default function Login() {
     try {
       const result = await cocobaseAuth.login(form.email, form.password);
       if (!result.user) throw new Error("Unable to sign in");
-      login(result.user, result.token ?? "cocobase_token", "cocobase_refresh");
+      login(
+        result.user,
+        result.token ?? "backend_token",
+        result.refreshToken ?? "backend_refresh",
+      );
       notify.success(`Welcome back, ${result.user.name}!`);
       navigate("/dashboard");
     } catch (error) {
@@ -55,7 +59,11 @@ export default function Login() {
       const result = await cocobaseAuth.googleLogin(credential, "earner");
       if (!result.user) throw new Error("Unable to sign in");
 
-      login(result.user, result.token ?? "cocobase_token", "cocobase_refresh");
+      login(
+        result.user,
+        result.token ?? "backend_token",
+        result.refreshToken ?? "backend_refresh",
+      );
       notify.success(`Welcome back, ${result.user.name}!`);
       navigate("/dashboard");
     } catch (error) {
