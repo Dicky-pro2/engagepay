@@ -50,6 +50,7 @@ interface AppState extends UserAppData {
 }
 
 const STORAGE_PREFIX = "zynk-user-data:";
+const SHARED_TASKS_STORAGE_KEY = "zynk-shared-tasks";
 
 const defaultUserData = (): UserAppData => ({
   tasks: [],
@@ -72,20 +73,70 @@ const defaultUserData = (): UserAppData => ({
 });
 
 // ── Persistence helpers ──
-function loadFromStorage(userId: string): UserAppData {
+function loadSharedTasks() {
   try {
-    const raw = localStorage.getItem(STORAGE_PREFIX + userId);
-    if (raw) return JSON.parse(raw);
+    const raw = localStorage.getItem(SHARED_TASKS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<
+        Pick<UserAppData, "tasks" | "myTasks">
+      >;
+      return {
+        tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
+        myTasks: Array.isArray(parsed.myTasks) ? parsed.myTasks : [],
+      };
+    }
   } catch {
     // fall through to default
   }
-  return defaultUserData();
+
+  return { tasks: [] as Task[], myTasks: [] as Task[] };
 }
 
-function saveToStorage(userId: string | null, data: UserAppData) {
+function saveSharedTasks(data: Pick<UserAppData, "tasks" | "myTasks">) {
+  try {
+    localStorage.setItem(SHARED_TASKS_STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // localStorage full or unavailable — fail silently for demo purposes
+  }
+}
+
+function loadFromStorage(userId: string): UserAppData {
+  const sharedTasks = loadSharedTasks();
+
+  try {
+    const raw = localStorage.getItem(STORAGE_PREFIX + userId);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<UserAppData>;
+      return {
+        ...defaultUserData(),
+        ...parsed,
+        tasks: sharedTasks.tasks,
+        myTasks: sharedTasks.myTasks,
+      };
+    }
+  } catch {
+    // fall through to default
+  }
+
+  return {
+    ...defaultUserData(),
+    tasks: sharedTasks.tasks,
+    myTasks: sharedTasks.myTasks,
+  };
+}
+
+function saveToStorage(userId: string | null, data: Partial<UserAppData>) {
   if (!userId) return;
   try {
-    localStorage.setItem(STORAGE_PREFIX + userId, JSON.stringify(data));
+    localStorage.setItem(
+      STORAGE_PREFIX + userId,
+      JSON.stringify({
+        ...defaultUserData(),
+        ...data,
+        tasks: [],
+        myTasks: [],
+      }),
+    );
   } catch {
     // localStorage full or unavailable — fail silently for demo purposes
   }
@@ -95,9 +146,8 @@ export const useAppStore = create<AppState>((set, get) => {
   const persistCurrent = (partial: Partial<UserAppData>) => {
     set(partial);
     const state = get();
+    saveSharedTasks({ tasks: state.tasks, myTasks: state.myTasks });
     saveToStorage(state.currentUserId, {
-      tasks: state.tasks,
-      myTasks: state.myTasks,
       activity: state.activity,
       transactions: state.transactions,
       withdrawals: state.withdrawals,
@@ -116,7 +166,13 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     clearUserData: () => {
-      set({ currentUserId: null, ...defaultUserData() });
+      const state = get();
+      set({
+        currentUserId: null,
+        ...defaultUserData(),
+        tasks: state.tasks,
+        myTasks: state.myTasks,
+      });
     },
 
     setTasks: (tasks) => persistCurrent({ tasks }),
