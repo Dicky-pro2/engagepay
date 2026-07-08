@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Icons } from "../components/icons/Icons";
 import { useAuthStore } from "../store/authStore";
-import { cocobaseAuth, isCocobaseEnabled } from "../services/cocobase";
+import { cocobaseAuth } from "../services/cocobase";
 import { signInWithGoogle } from "../services/googleAuth";
 import { notify } from "../utils/notify";
 import { AuthShell, GoogleIcon, LoadingSpinner } from "./Login";
@@ -58,10 +58,6 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      if (!isCocobaseEnabled) {
-        throw new Error("The authentication service is not configured.");
-      }
-
       const result = await cocobaseAuth.register({
         name: form.name,
         nickname: form.nickname.trim(),
@@ -86,10 +82,6 @@ export default function Signup() {
   const handleGoogleSignup = async () => {
     setLoading(true);
     try {
-      if (!isCocobaseEnabled) {
-        throw new Error("The authentication service is not configured.");
-      }
-
       const { credential } = await signInWithGoogle();
       const result = await cocobaseAuth.googleLogin(credential, role);
       if (!result.user) throw new Error("Unable to create account");

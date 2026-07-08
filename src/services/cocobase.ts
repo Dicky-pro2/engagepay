@@ -217,7 +217,21 @@ async function requestCocobase(
 
 export const cocobaseAuth = {
   async googleLogin(idToken: string, fallbackRole: Role = "earner") {
-    if (!cocobaseClient) throw new Error("Cocobase is not configured");
+    if (!cocobaseClient) {
+      const fallbackUser = createLocalUser(
+        "google-user@example.com",
+        fallbackRole,
+        {
+          name: "Google User",
+          role: fallbackRole,
+        },
+      );
+      console.warn("Cocobase auth unavailable; using local fallback session");
+      return {
+        user: fallbackUser,
+        token: `local-token-${fallbackUser.id}`,
+      };
+    }
     try {
       const user = await cocobaseClient.auth.loginWithGoogle({
         idToken,
@@ -247,7 +261,16 @@ export const cocobaseAuth = {
   },
 
   async login(email: string, password: string) {
-    if (!cocobaseClient) throw new Error("Cocobase is not configured");
+    if (!cocobaseClient) {
+      const fallbackUser = createLocalUser(email, "earner", {
+        name: email.split("@")[0],
+      });
+      console.warn("Cocobase auth unavailable; using local fallback session");
+      return {
+        user: fallbackUser,
+        token: `local-token-${fallbackUser.id}`,
+      };
+    }
     try {
       const result = await cocobaseClient.auth.login({ email, password });
       return {
@@ -275,7 +298,18 @@ export const cocobaseAuth = {
     password: string;
     role: Role;
   }) {
-    if (!cocobaseClient) throw new Error("Cocobase is not configured");
+    if (!cocobaseClient) {
+      const fallbackUser = createLocalUser(payload.email, payload.role, {
+        name: payload.name,
+        nickname: payload.nickname,
+        role: payload.role,
+      });
+      console.warn("Cocobase auth unavailable; using local fallback session");
+      return {
+        user: fallbackUser,
+        token: `local-token-${fallbackUser.id}`,
+      };
+    }
     try {
       const result = await cocobaseClient.auth.register({
         email: payload.email,

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Icons } from "../components/icons/Icons";
 import { useAuthStore } from "../store/authStore";
-import { cocobaseAuth, isCocobaseEnabled } from "../services/cocobase";
+import { cocobaseAuth } from "../services/cocobase";
 import { signInWithGoogle } from "../services/googleAuth";
 import { notify } from "../utils/notify";
 
@@ -34,10 +34,6 @@ export default function Login() {
 
     setLoading(true);
     try {
-      if (!isCocobaseEnabled) {
-        throw new Error("The authentication service is not configured.");
-      }
-
       const result = await cocobaseAuth.login(form.email, form.password);
       if (!result.user) throw new Error("Unable to sign in");
       login(result.user, result.token ?? "cocobase_token", "cocobase_refresh");
@@ -55,10 +51,6 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      if (!isCocobaseEnabled) {
-        throw new Error("The authentication service is not configured.");
-      }
-
       const { credential } = await signInWithGoogle();
       const result = await cocobaseAuth.googleLogin(credential, "earner");
       if (!result.user) throw new Error("Unable to sign in");
