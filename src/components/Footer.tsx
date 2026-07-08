@@ -4,7 +4,7 @@ const Footer = () => {
             <p>
                 &copy; {new Date().getFullYear()}{" "}All rights reserved.
             </p>
-            <p>Designed and built with ❤️ by whim-stack</p>
+            <p>Designed and built with swag by whim-stack the best frontend developer </p>
         </div>
     )
 }
