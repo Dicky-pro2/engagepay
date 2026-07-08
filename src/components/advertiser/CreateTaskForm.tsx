@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { useAppStore } from "../../store/appStore";
+import { cocobaseTasks } from "../../services/cocobase";
 import { notify } from "../../utils/notify";
 import { Icons } from "../icons/Icons";
 import { PlatformIcon } from "../icons/PlatformIcons";
-import type { Task } from "../../types";
 
 const PLATFORM_OPTIONS = [
   "Instagram",
@@ -46,7 +46,7 @@ export default function CreateTaskForm() {
 
   const totalCost = reward * slots;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!url.trim()) {
@@ -62,45 +62,54 @@ export default function CreateTaskForm() {
       return;
     }
 
-    const task: Task = {
-      id: `t${Date.now()}`,
-      advertiser: user.id,
-      advertiserName: user.name,
-      platform,
-      taskType,
-      title: `${taskType} on ${platform}`,
-      instructions:
-        instructions.trim() ||
-        `Go to the link and ${taskType.toLowerCase()} as instructed.`,
-      url: url.trim(),
-      reward,
-      totalSlots: slots,
-      slotsLeft: slots,
-      completionCount: 0,
-      status: "active",
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const createdTask = await cocobaseTasks.create({
+        advertiser: user.id,
+        advertiserId: user.id,
+        advertiserName: user.name,
+        advertiserDisplayName: user.name,
+        advertiserEmail: user.email,
+        platform,
+        taskType,
+        title: `${taskType} on ${platform}`,
+        instructions:
+          instructions.trim() ||
+          `Go to the link and ${taskType.toLowerCase()} as instructed.`,
+        url: url.trim(),
+        reward,
+        totalSlots: slots,
+        status: "active",
+      });
 
-    addTask(task);
-    updateWallet(user.walletBalance - totalCost);
-    pushActivity(
-      `New task posted: ${taskType} on ${platform} · ${reward} coins x${slots}`,
-      "violet",
-    );
-    addTransaction({
-      type: "task_payment",
-      amount: -totalCost,
-      description: `Task posted: ${taskType} on ${platform}`,
-    });
-    addNotification({
-      type: "new_task",
-      title: "Task Posted!",
-      message: `Your ${taskType} task on ${platform} is now live with ${slots} slots.`,
-    });
-    notify.taskPosted(totalCost);
+      if (!createdTask) {
+        notify.error("Could not publish the task right now.");
+        return;
+      }
 
-    setUrl("");
-    setInstructions("");
+      addTask(createdTask);
+      updateWallet(user.walletBalance - totalCost);
+      pushActivity(
+        `New task posted: ${taskType} on ${platform} · ${reward} coins x${slots}`,
+        "violet",
+      );
+      addTransaction({
+        type: "task_payment",
+        amount: -totalCost,
+        description: `Task posted: ${taskType} on ${platform}`,
+      });
+      addNotification({
+        type: "new_task",
+        title: "Task Posted!",
+        message: `Your ${taskType} task on ${platform} is now live with ${slots} slots.`,
+      });
+      notify.taskPosted(totalCost);
+
+      setUrl("");
+      setInstructions("");
+    } catch (error) {
+      console.error("Failed to create task", error);
+      notify.error("Could not publish the task. Please try again.");
+    }
   };
 
   return (
