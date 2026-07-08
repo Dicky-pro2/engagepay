@@ -63,7 +63,21 @@ export default function EarnerTasks() {
   }, [setTasks]);
 
   useEffect(() => {
-    void refreshTasks();
+    let active = true;
+
+    void (async () => {
+      try {
+        await refreshTasks();
+      } catch {
+        if (!active) {
+          // ignore stale refreshes once the component unmounts
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
   }, [refreshTasks]);
 
   // Purpose: only show tasks that are still open for the current earner.

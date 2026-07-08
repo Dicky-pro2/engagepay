@@ -26,97 +26,239 @@ function normalizeRole(value: unknown, fallback: Role = "earner"): Role {
   return fallback;
 }
 
+function pickFirstDefined<T>(
+  ...values: Array<T | undefined | null>
+): T | undefined {
+  for (const value of values) {
+    if (value === undefined || value === null) continue;
+    if (typeof value === "string" && value.trim() === "") continue;
+    return value;
+  }
+  return undefined;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asString(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return undefined;
+}
+
+function asNumber(value: unknown): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function asBoolean(value: unknown, fallback = false): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true" || normalized === "1" || normalized === "yes") {
+      return true;
+    }
+    if (normalized === "false" || normalized === "0" || normalized === "no") {
+      return false;
+    }
+  }
+  return fallback;
+}
+
 export function normalizeUser(
   appUser?: AppUser | null,
   fallbackRole: Role = "earner",
 ): User | null {
   if (!appUser) return null;
 
-  const data = appUser.data ?? {};
+  const data = asRecord(appUser.data);
   const role = normalizeRole(
-    data.role ?? data.userRole ?? appUser.roles?.[0],
+    pickFirstDefined(
+      asString(data.role),
+      asString(data.userRole),
+      appUser.roles?.[0],
+    ),
     fallbackRole,
   );
 
   return {
     id: appUser.id,
-    name: data.name ?? data.fullName ?? appUser.email?.split("@")[0] ?? "User",
-    nickname: data.nickname ?? data.nickName ?? data.username ?? null,
+    name:
+      asString(data.name) ??
+      asString(data.fullName) ??
+      appUser.email?.split("@")[0] ??
+      "User",
+    nickname:
+      pickFirstDefined(
+        asString(data.nickname),
+        asString(data.nickName),
+        asString(data.username),
+      ) ?? null,
     email: appUser.email,
     role,
-    avatar: data.avatar ?? null,
-    walletBalance: Number(data.walletBalance ?? 0),
-    totalEarned: Number(data.totalEarned ?? 0),
-    totalSpent: Number(data.totalSpent ?? 0),
-    tasksCompleted: Number(data.tasksCompleted ?? 0),
-    tasksPosted: Number(data.tasksPosted ?? 0),
-    isEmailVerified: Boolean(data.isEmailVerified ?? true),
+    avatar: asString(data.avatar) ?? null,
+    walletBalance: asNumber(data.walletBalance),
+    totalEarned: asNumber(data.totalEarned),
+    totalSpent: asNumber(data.totalSpent),
+    tasksCompleted: asNumber(data.tasksCompleted),
+    tasksPosted: asNumber(data.tasksPosted),
+    isEmailVerified: asBoolean(data.isEmailVerified, true),
   };
 }
 
 // Purpose: convert raw Cocobase documents into the app's task shape so the earner UI can render them consistently.
-function normalizeTask(document: Document<any>): Task {
-  const data = document.data ?? {};
-  const totalSlots = Number(data.totalSlots ?? 0);
-  const completionCount = Number(data.completionCount ?? 0);
+function normalizeTask(document: Document<Record<string, unknown>>): Task {
+  const data = asRecord(document.data);
+  const totalSlots = asNumber(data.totalSlots);
+  const completionCount = asNumber(data.completionCount);
   const slotsLeft = Math.max(0, totalSlots - completionCount);
-  const advertiserId = data.advertiserId ?? data.advertiser ?? "";
+  const advertiserId =
+    asString(data.advertiserId) ?? asString(data.advertiser) ?? "";
   const advertiserName =
-    data.advertiserName ?? data.advertiserDisplayName ?? "Advertiser";
+    asString(data.advertiserName) ??
+    asString(data.advertiserDisplayName) ??
+    "Advertiser";
 
   return {
     id: document.id,
     advertiser: advertiserId,
     advertiserName,
     advertiserId,
-    advertiserEmail: data.advertiserEmail ?? "",
-    advertiserDisplayName: data.advertiserDisplayName ?? advertiserName,
-    platform: data.platform ?? "",
-    taskType: data.taskType ?? "",
-    title: data.title ?? "Untitled task",
-    instructions: data.instructions ?? "",
-    url: data.url ?? "",
-    reward: Number(data.reward ?? 0),
+    advertiserEmail: asString(data.advertiserEmail) ?? "",
+    advertiserDisplayName:
+      asString(data.advertiserDisplayName) ?? advertiserName,
+    platform: asString(data.platform) ?? "",
+    taskType: asString(data.taskType) ?? "",
+    title: asString(data.title) ?? "Untitled task",
+    instructions: asString(data.instructions) ?? "",
+    url: asString(data.url) ?? "",
+    reward: asNumber(data.reward),
     totalSlots,
     slotsLeft,
     completionCount,
-    status: data.status ?? "active",
-    createdAt: data.createdAt ?? document.created_at,
+    status: (asString(data.status) as Task["status"] | undefined) ?? "active",
+    createdAt: asString(data.createdAt) ?? asString(document.created_at) ?? "",
   };
 }
 
 function normalizeBackendUser(
   payload: unknown,
   fallbackRole: Role = "earner",
+  fallbackName?: string,
+  fallbackNickname?: string,
 ): User | null {
   if (!payload || typeof payload !== "object") return null;
 
-  const data = payload as Record<string, any>;
+  const directData = payload as Record<string, unknown>;
+  const nestedData = asRecord(directData.data);
+  const mergedData = { ...nestedData, ...directData } as Record<
+    string,
+    unknown
+  >;
+  const roleValues = Array.isArray(mergedData.roles)
+    ? (mergedData.roles as unknown[])
+    : [];
   const role = normalizeRole(
-    data.role ?? data.userRole ?? data.roles?.[0] ?? data.type,
+    pickFirstDefined(
+      mergedData.role,
+      mergedData.userRole,
+      roleValues[0],
+      mergedData.type,
+      directData.role,
+      directData.userRole,
+      directData.type,
+    ),
     fallbackRole,
   );
 
+  const firstName = pickFirstDefined(
+    asString(mergedData.firstName),
+    asString(nestedData.firstName),
+    asString(mergedData.name),
+    asString(nestedData.name),
+    asString(mergedData.fullName),
+    asString(nestedData.fullName),
+    asString(mergedData.displayName),
+    asString(nestedData.displayName),
+    asString(mergedData.username),
+    asString(nestedData.username),
+    fallbackName,
+  );
+  const lastName = pickFirstDefined(
+    asString(mergedData.lastName),
+    asString(nestedData.lastName),
+  );
+  const fullName = firstName
+    ? [firstName, lastName].filter(Boolean).join(" ").trim()
+    : undefined;
+
   return {
-    id: data.id ?? data._id ?? data.userId ?? data.uuid ?? `user-${Date.now()}`,
+    id:
+      asString(
+        pickFirstDefined(
+          mergedData.id,
+          mergedData._id,
+          mergedData.userId,
+          mergedData.uuid,
+        ),
+      ) ?? `user-${Date.now()}`,
     name:
-      data.name ??
-      data.fullName ??
-      data.displayName ??
-      data.username ??
-      data.email?.split("@")[0] ??
+      fullName ??
+      pickFirstDefined(
+        asString(mergedData.name),
+        asString(mergedData.fullName),
+        asString(mergedData.displayName),
+        asString(mergedData.username),
+        asString(mergedData.email)?.split("@")[0],
+        fallbackName,
+      ) ??
       "User",
-    nickname: data.nickname ?? data.nickName ?? data.username ?? null,
-    email: data.email ?? data.username ?? "",
+    nickname:
+      pickFirstDefined(
+        asString(mergedData.nickname),
+        asString(mergedData.nickName),
+        asString(mergedData.username),
+        fallbackNickname,
+      ) ?? null,
+    email:
+      pickFirstDefined(
+        asString(mergedData.email),
+        asString(mergedData.username),
+      ) ?? "",
     role,
-    avatar: data.avatar ?? data.profilePicture ?? null,
-    walletBalance: Number(data.walletBalance ?? data.balance ?? 0),
-    totalEarned: Number(data.totalEarned ?? 0),
-    totalSpent: Number(data.totalSpent ?? 0),
-    tasksCompleted: Number(data.tasksCompleted ?? data.tasks_completed ?? 0),
-    tasksPosted: Number(data.tasksPosted ?? data.tasks_posted ?? 0),
-    isEmailVerified: Boolean(
-      data.isEmailVerified ?? data.emailVerified ?? data.verified ?? true,
+    avatar:
+      pickFirstDefined(
+        asString(mergedData.avatar),
+        asString(mergedData.profilePicture),
+      ) ?? null,
+    walletBalance: asNumber(
+      pickFirstDefined(mergedData.walletBalance, mergedData.balance),
+    ),
+    totalEarned: asNumber(pickFirstDefined(mergedData.totalEarned)),
+    totalSpent: asNumber(pickFirstDefined(mergedData.totalSpent)),
+    tasksCompleted: asNumber(
+      pickFirstDefined(mergedData.tasksCompleted, mergedData.tasks_completed),
+    ),
+    tasksPosted: asNumber(
+      pickFirstDefined(mergedData.tasksPosted, mergedData.tasks_posted),
+    ),
+    isEmailVerified: asBoolean(
+      pickFirstDefined(
+        mergedData.isEmailVerified,
+        mergedData.emailVerified,
+        mergedData.verified,
+      ),
+      true,
     ),
   };
 }
@@ -124,21 +266,32 @@ function normalizeBackendUser(
 function normalizeAuthResult(
   responseData: unknown,
   fallbackRole: Role = "earner",
+  fallbackName?: string,
+  fallbackNickname?: string,
 ) {
-  const root = (responseData ?? {}) as Record<string, any>;
-  const body = (root.data ?? root) as Record<string, any>;
-  const userPayload = body.user ?? body.data?.user ?? body.profile ?? body;
+  const root = asRecord(responseData);
+  const body = asRecord(root.data);
+  const nestedBody = asRecord(body.data);
+  const userPayload = body.user ?? nestedBody.user ?? body.profile ?? body;
   const accessToken =
-    body.accessToken ??
-    body.token ??
-    body.data?.accessToken ??
-    body.data?.token ??
+    asString(body.accessToken) ??
+    asString(body.token) ??
+    asString(nestedBody.accessToken) ??
+    asString(nestedBody.token) ??
     null;
   const refreshToken =
-    body.refreshToken ?? body.data?.refreshToken ?? body.refresh_token ?? null;
+    asString(body.refreshToken) ??
+    asString(nestedBody.refreshToken) ??
+    asString(body.refresh_token) ??
+    null;
 
   return {
-    user: normalizeBackendUser(userPayload, fallbackRole),
+    user: normalizeBackendUser(
+      userPayload,
+      fallbackRole,
+      fallbackName,
+      fallbackNickname,
+    ),
     token: accessToken,
     refreshToken,
   };
@@ -208,9 +361,9 @@ async function requestCocobase(
       errorDetail = await response.json();
     } catch {
       try {
-        errorDetail = await response.text();
+        await response.text();
       } catch {
-        errorDetail = null;
+        // Ignore parse failures and fall back to the generic message below.
       }
     }
 
@@ -294,6 +447,8 @@ export const cocobaseAuth = {
       const { user, token, refreshToken } = normalizeAuthResult(
         response.data,
         payload.role,
+        payload.name,
+        payload.nickname,
       );
       if (!user) throw new Error("Unable to create account");
       return {
@@ -382,7 +537,9 @@ export const cocobaseTasks = {
   async list() {
     if (cocobaseClient) {
       try {
-        const documents = await cocobaseClient.listDocuments<any>("tasks", {
+        const documents = await cocobaseClient.listDocuments<
+          Record<string, unknown>
+        >("tasks", {
           sort: "created_at",
           order: "desc",
         });
@@ -405,7 +562,7 @@ export const cocobaseTasks = {
     > & {
       status?: Task["status"];
       completedByCurrentUser?: boolean;
-      taskSubmissions?: any[];
+      taskSubmissions?: Array<Record<string, unknown>>;
       advertiserId?: string;
       advertiserEmail?: string;
       advertiserDisplayName?: string;

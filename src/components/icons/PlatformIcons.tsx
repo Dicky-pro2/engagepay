@@ -1,4 +1,4 @@
-﻿import { getPlatformMeta } from './PlatformIconsRegistry';
+﻿import { getPlatformMeta } from "./PlatformIconsRegistry";
 
 interface PlatformIconProps {
   platform: string;
@@ -9,7 +9,7 @@ interface PlatformIconProps {
 export function PlatformIcon({
   platform,
   size = 20,
-  className = '',
+  className = "",
 }: PlatformIconProps) {
   const meta = getPlatformMeta(platform);
   if (!meta) return null;
@@ -28,9 +28,4 @@ export function PlatformIcon({
       <path d={meta.path} />
     </svg>
   );
-}
-
-export function getPlatformColor(platform: string): string {
-  const meta = getPlatformMeta(platform);
-  return meta ? `#${meta.hex}` : '#94A3B8';
 }
