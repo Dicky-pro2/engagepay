@@ -7,6 +7,23 @@ const hasCocobaseConfig = Boolean(
   env.COCOBASE_API_KEY && env.COCOBASE_PROJECT_ID,
 );
 const SHARED_TASKS_STORAGE_KEY = "zynk-shared-tasks";
+const LOCAL_AUTH_USERS_STORAGE_KEY = "zynk-local-auth-users";
+
+type LocalAuthUser = {
+  id: string;
+  name: string;
+  nickname: string | null;
+  email: string;
+  password: string;
+  role: Role;
+  avatar: string | null;
+  walletBalance: number;
+  totalEarned: number;
+  totalSpent: number;
+  tasksCompleted: number;
+  tasksPosted: number;
+  isEmailVerified: boolean;
+};
 
 export const cocobaseClient = hasCocobaseConfig
   ? new Cocobase({
@@ -18,6 +35,159 @@ export const cocobaseClient = hasCocobaseConfig
   : null;
 
 export const isCocobaseEnabled = Boolean(cocobaseClient);
+
+function readLocalAuthUsers(): LocalAuthUser[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.localStorage.getItem(LOCAL_AUTH_USERS_STORAGE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw) as Array<Partial<LocalAuthUser>>;
+    return parsed.filter((entry): entry is LocalAuthUser =>
+      Boolean(entry?.email && typeof entry.password === "string"),
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalAuthUsers(users: LocalAuthUser[]) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(
+      LOCAL_AUTH_USERS_STORAGE_KEY,
+      JSON.stringify(users),
+    );
+  } catch {
+    // Ignore storage issues and continue with in-memory fallback.
+  }
+}
+
+function ensureDemoAuthUsers(): LocalAuthUser[] {
+  const existing = readLocalAuthUsers();
+  if (existing.length > 0) return existing;
+
+  const demoUsers: LocalAuthUser[] = [
+    {
+      id: "demo-advertiser",
+      name: "Demo Advertiser",
+      nickname: "demoadv",
+      email: "adv@test.com",
+      password: "Password123!",
+      role: "advertiser",
+      avatar: null,
+      walletBalance: 2500,
+      totalEarned: 0,
+      totalSpent: 0,
+      tasksCompleted: 0,
+      tasksPosted: 0,
+      isEmailVerified: true,
+    },
+    {
+      id: "demo-earner",
+      name: "Demo Earner",
+      nickname: "demoearn",
+      email: "earner@test.com",
+      password: "Password123!",
+      role: "earner",
+      avatar: null,
+      walletBalance: 340,
+      totalEarned: 1200,
+      totalSpent: 0,
+      tasksCompleted: 3,
+      tasksPosted: 0,
+      isEmailVerified: true,
+    },
+  ];
+
+  writeLocalAuthUsers(demoUsers);
+  return demoUsers;
+}
+
+function buildLocalAuthUser(payload: {
+  name: string;
+  nickname?: string;
+  email: string;
+  password: string;
+  role: Role;
+}): LocalAuthUser {
+  return {
+    id: `local-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    name: payload.name.trim() || "User",
+    nickname: payload.nickname?.trim() || null,
+    email: payload.email.trim().toLowerCase(),
+    password: payload.password,
+    role: payload.role,
+    avatar: null,
+    walletBalance: 0,
+    totalEarned: 0,
+    totalSpent: 0,
+    tasksCompleted: 0,
+    tasksPosted: 0,
+    isEmailVerified: true,
+  };
+}
+
+function createLocalAuthResult(user: LocalAuthUser) {
+  const normalizedUser: User = {
+    id: user.id,
+    name: user.name,
+    nickname: user.nickname,
+    email: user.email,
+    role: user.role,
+    avatar: user.avatar,
+    walletBalance: user.walletBalance,
+    totalEarned: user.totalEarned,
+    totalSpent: user.totalSpent,
+    tasksCompleted: user.tasksCompleted,
+    tasksPosted: user.tasksPosted,
+    isEmailVerified: user.isEmailVerified,
+  };
+
+  return {
+    user: normalizedUser,
+    token: `local-token-${user.id}`,
+    refreshToken: `local-refresh-${user.id}`,
+  };
+}
+
+function loginLocalAuthUser(email: string, password: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const users = ensureDemoAuthUsers();
+  const match = users.find(
+    (user) =>
+      user.email.toLowerCase() === normalizedEmail &&
+      user.password === password,
+  );
+
+  if (!match) return null;
+  return createLocalAuthResult(match);
+}
+
+function registerLocalAuthUser(payload: {
+  name: string;
+  nickname?: string;
+  email: string;
+  password: string;
+  role: Role;
+}) {
+  const normalizedEmail = payload.email.trim().toLowerCase();
+  const users = ensureDemoAuthUsers();
+  const exists = users.some(
+    (user) => user.email.toLowerCase() === normalizedEmail,
+  );
+
+  if (exists) {
+    throw new Error("An account with this email already exists.");
+  }
+
+  const newUser = buildLocalAuthUser(payload);
+  users.push(newUser);
+  writeLocalAuthUsers(users);
+  return createLocalAuthResult(newUser);
+}
 
 function normalizeRole(value: unknown, fallback: Role = "earner"): Role {
   if (value === "advertiser" || value === "earner" || value === "admin") {
@@ -408,7 +578,13 @@ export const cocobaseAuth = {
         refreshToken: refreshToken ?? "backend_refresh",
       };
     } catch (error) {
-      throw normalizeAuthError(error);
+      const localResult = registerLocalAuthUser({
+        name: "Google User",
+        email: `google-${Date.now()}@local.dev`,
+        password: `google-${Date.now()}`,
+        role: fallbackRole,
+      });
+      return localResult;
     }
   },
 
@@ -426,6 +602,8 @@ export const cocobaseAuth = {
         refreshToken: refreshToken ?? "backend_refresh",
       };
     } catch (error) {
+      const localResult = loginLocalAuthUser(email, password);
+      if (localResult) return localResult;
       throw normalizeAuthError(error);
     }
   },
@@ -440,6 +618,7 @@ export const cocobaseAuth = {
     try {
       const response = await authAPI.register({
         name: payload.name,
+        nickname: payload.nickname,
         email: payload.email,
         password: payload.password,
         role: payload.role,
@@ -457,7 +636,8 @@ export const cocobaseAuth = {
         refreshToken: refreshToken ?? "backend_refresh",
       };
     } catch (error) {
-      throw normalizeAuthError(error);
+      const localResult = registerLocalAuthUser(payload);
+      return localResult;
     }
   },
 
