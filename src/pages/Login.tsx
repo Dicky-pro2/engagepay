@@ -185,8 +185,8 @@ export default function Login() {
       </p>
 
       <p className="text-center text-xs text-slatec/60 mt-3 leading-relaxed">
-        Demo tip: use an email with "adv" (e.g. adv@test.com) to log in as
-        Advertiser.
+        Demo tip: use adv@test.com to log in as Advertiser, earner@test.com as
+        Earner, or admin@test.com as Admin.
       </p>
     </AuthShell>
   );

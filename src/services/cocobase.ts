@@ -100,6 +100,21 @@ function ensureDemoAuthUsers(): LocalAuthUser[] {
       tasksPosted: 0,
       isEmailVerified: true,
     },
+    {
+      id: "demo-admin",
+      name: "Demo Admin",
+      nickname: "demoadmin",
+      email: "admin@test.com",
+      password: "Password123!",
+      role: "admin",
+      avatar: null,
+      walletBalance: 0,
+      totalEarned: 0,
+      totalSpent: 0,
+      tasksCompleted: 0,
+      tasksPosted: 0,
+      isEmailVerified: true,
+    },
   ];
 
   writeLocalAuthUsers(demoUsers);
