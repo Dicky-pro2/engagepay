@@ -696,37 +696,6 @@ export const cocobaseAuth = {
   },
 };
 
-function readStoredTasksFromLocalStorage(): Task[] {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const raw = window.localStorage.getItem(SHARED_TASKS_STORAGE_KEY);
-    if (!raw) return [];
-
-    const parsed = JSON.parse(raw) as Partial<{
-      tasks?: Task[];
-      myTasks?: Task[];
-    }>;
-
-    return Array.isArray(parsed.tasks) ? parsed.tasks : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeStoredTasksToLocalStorage(tasks: Task[]) {
-  if (typeof window === "undefined") return;
-
-  try {
-    window.localStorage.setItem(
-      SHARED_TASKS_STORAGE_KEY,
-      JSON.stringify({ tasks, myTasks: [] }),
-    );
-  } catch {
-    // localStorage is unavailable; continue with in-memory state only
-  }
-}
-
 function readStoredCollection<T>(storageKey: string): T[] {
   if (typeof window === "undefined") return [];
 
@@ -897,61 +866,30 @@ export const cocobaseWallet = {
       createdAt: payload.createdAt ?? new Date().toISOString(),
     };
 
-    if (!cocobaseClient) {
-      const existing =
-        readStoredCollection<Record<string, unknown>>("zynk-withdrawals");
-      const nextItem = {
-        id: `local-withdrawal-${Date.now()}`,
-        ...withdrawalPayload,
-      };
-      writeStoredCollection("zynk-withdrawals", [nextItem, ...existing]);
-      return nextItem;
-    }
+    if (!cocobaseClient) throw new Error("Cocobase is not configured");
 
-    try {
-      const document = await cocobaseClient.createDocument(
-        "withdrawals",
-        withdrawalPayload,
-      );
-      return { id: document.id, ...withdrawalPayload };
-    } catch (error) {
-      console.warn(
-        "Cocobase withdrawal save failed; using local fallback",
-        error,
-      );
-      const existing =
-        readStoredCollection<Record<string, unknown>>("zynk-withdrawals");
-      const nextItem = {
-        id: `local-withdrawal-${Date.now()}`,
-        ...withdrawalPayload,
-      };
-      writeStoredCollection("zynk-withdrawals", [nextItem, ...existing]);
-      return nextItem;
-    }
+    const document = await cocobaseClient.createDocument(
+      "withdrawals",
+      withdrawalPayload,
+    );
+    return { id: document.id, ...withdrawalPayload };
   },
 };
 
 export const cocobaseTasks = {
   // Purpose: load task records from Cocobase for the earner browse page and other task-driven views.
   async list() {
-    if (cocobaseClient) {
-      try {
-        const documents = await cocobaseClient.listDocuments<
-          Record<string, unknown>
-        >("tasks", {
-          sort: "created_at",
-          order: "desc",
-        });
-        return documents.map(normalizeTask);
-      } catch (error) {
-        console.warn(
-          "Falling back to local task storage because CocoBase task list failed",
-          error,
-        );
-      }
+    if (!cocobaseClient) {
+      throw new Error("Cocobase is not configured");
     }
 
-    return readStoredTasksFromLocalStorage();
+    const documents = await cocobaseClient.listDocuments<
+      Record<string, unknown>
+    >("tasks", {
+      sort: "created_at",
+      order: "desc",
+    });
+    return documents.map(normalizeTask);
   },
 
   async create(
@@ -984,36 +922,10 @@ export const cocobaseTasks = {
     };
 
     if (!cocobaseClient) {
-      const localTask: Task = {
-        id: `local-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        advertiser: taskPayload.advertiser,
-        advertiserName: taskPayload.advertiserName,
-        platform: taskPayload.platform,
-        taskType: taskPayload.taskType,
-        title: taskPayload.title,
-        instructions: taskPayload.instructions,
-        url: taskPayload.url,
-        reward: taskPayload.reward,
-        totalSlots: taskPayload.totalSlots,
-        slotsLeft: taskPayload.slotsLeft,
-        completionCount: taskPayload.completionCount,
-        status: taskPayload.status,
-        createdAt: taskPayload.createdAt,
-        completedByCurrentUser: payload.completedByCurrentUser ?? false,
-        taskSubmissions: taskPayload.taskSubmissions,
-      };
-
-      const existingTasks = readStoredTasksFromLocalStorage();
-      const nextTasks = [localTask, ...existingTasks];
-      writeStoredTasksToLocalStorage(nextTasks);
-      return localTask;
+      throw new Error("Cocobase is not configured");
     }
 
     const document = await cocobaseClient.createDocument("tasks", taskPayload);
-    const createdTask = normalizeTask(document);
-    const existingTasks = readStoredTasksFromLocalStorage();
-    const nextTasks = [createdTask, ...existingTasks];
-    writeStoredTasksToLocalStorage(nextTasks);
-    return createdTask;
+    return normalizeTask(document);
   },
 };
