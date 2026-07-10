@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Icons } from "../icons/Icons";
 import { useAuthStore } from "../../store/authStore";
 import { useAppStore } from "../../store/appStore";
+import { cocobaseSubmissions } from "../../services/cocobase";
 import { notify } from "../../utils/notify";
 import type { Task } from "../../types";
 
@@ -16,8 +17,9 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
   const { completeTask, addTransaction, pushActivity, addNotification } =
     useAppStore();
   const [proof, setProof] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!proof.trim()) {
       notify.error(
         "Please provide proof (your profile URL or screenshot link)",
@@ -26,26 +28,44 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
     }
     if (!task || !user) return;
 
-    completeTask(task.id, proof);
-    updateWallet(user.walletBalance + task.reward);
-    addTransaction({
-      type: "task_earning",
-      amount: task.reward,
-      description: `Earned from: ${task.taskType} on ${task.platform}`,
-    });
-    pushActivity(
-      `Task completed: ${task.taskType} on ${task.platform} · 🪙${task.reward} paid out`,
-      "green",
-    );
-    addNotification({
-      type: "task_approved",
-      title: "💰 Task Approved!",
-      message: `You earned 🪙${task.reward} for "${task.taskType} on ${task.platform}"`,
-    });
+    setSubmitting(true);
 
-    notify.coinsEarned(task.reward, `${task.taskType} on ${task.platform}`);
-    setProof("");
-    onClose();
+    try {
+      await cocobaseSubmissions.submit({
+        taskId: task.id,
+        taskTitle: `${task.taskType} on ${task.platform}`,
+        platform: task.platform,
+        taskType: task.taskType,
+        reward: task.reward,
+        proof: proof.trim(),
+      });
+
+      completeTask(task.id, proof);
+      updateWallet(user.walletBalance + task.reward);
+      addTransaction({
+        type: "task_earning",
+        amount: task.reward,
+        description: `Earned from: ${task.taskType} on ${task.platform}`,
+      });
+      pushActivity(
+        `Task completed: ${task.taskType} on ${task.platform} · 🪙${task.reward} paid out`,
+        "green",
+      );
+      addNotification({
+        type: "task_approved",
+        title: "💰 Task Approved!",
+        message: `You earned 🪙${task.reward} for "${task.taskType} on ${task.platform}"`,
+      });
+
+      notify.coinsEarned(task.reward, `${task.taskType} on ${task.platform}`);
+      setProof("");
+      onClose();
+    } catch (error) {
+      console.error("Failed to submit task proof", error);
+      notify.error("Could not submit your proof right now. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -112,10 +132,12 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
                 Cancel
               </button>
               <button
-                onClick={handleSubmit}
-                className="btn-green flex-1 flex items-center justify-center gap-1.5"
+                onClick={() => void handleSubmit()}
+                disabled={submitting}
+                className="btn-green flex-1 flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Icons.Confirm size={16} /> Submit & Earn
+                <Icons.Confirm size={16} />{" "}
+                {submitting ? "Submitting..." : "Submit & Earn"}
               </button>
             </div>
           </motion.div>

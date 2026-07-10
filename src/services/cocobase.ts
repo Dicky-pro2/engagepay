@@ -727,6 +727,210 @@ function writeStoredTasksToLocalStorage(tasks: Task[]) {
   }
 }
 
+function readStoredCollection<T>(storageKey: string): T[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as T[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredCollection<T>(storageKey: string, items: T[]) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(items));
+  } catch {
+    // Ignore storage issues and continue with in-memory fallback.
+  }
+}
+
+export const cocobaseProfile = {
+  async updateName(userId: string, name: string) {
+    const payload = {
+      userId,
+      name,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (!cocobaseClient) {
+      const existing =
+        readStoredCollection<Record<string, unknown>>("zynk-profiles");
+      const next = [
+        ...existing.filter(
+          (item) => (item.userId as string | undefined) !== userId,
+        ),
+        { id: `local-profile-${userId}`, ...payload },
+      ];
+      writeStoredCollection("zynk-profiles", next);
+      return { id: `local-profile-${userId}`, ...payload };
+    }
+
+    try {
+      const document = await cocobaseClient.createDocument("profiles", payload);
+      return { id: document.id, ...payload };
+    } catch (error) {
+      console.warn(
+        "Cocobase profile update failed; using local fallback",
+        error,
+      );
+      const existing =
+        readStoredCollection<Record<string, unknown>>("zynk-profiles");
+      const next = [
+        ...existing.filter(
+          (item) => (item.userId as string | undefined) !== userId,
+        ),
+        { id: `local-profile-${userId}`, ...payload },
+      ];
+      writeStoredCollection("zynk-profiles", next);
+      return { id: `local-profile-${userId}`, ...payload };
+    }
+  },
+};
+
+export const cocobaseSubmissions = {
+  async submit(payload: {
+    taskId: string;
+    taskTitle: string;
+    platform: string;
+    taskType: string;
+    reward: number;
+    proof: string;
+    status?: string;
+    createdAt?: string;
+  }) {
+    const submissionPayload = {
+      ...payload,
+      proof: payload.proof.trim(),
+      status: payload.status ?? "pending",
+      createdAt: payload.createdAt ?? new Date().toISOString(),
+    };
+
+    if (!cocobaseClient) {
+      const existing =
+        readStoredCollection<Record<string, unknown>>("zynk-submissions");
+      const nextItem = {
+        id: `local-submission-${Date.now()}`,
+        ...submissionPayload,
+      };
+      writeStoredCollection("zynk-submissions", [nextItem, ...existing]);
+      return nextItem;
+    }
+
+    try {
+      const document = await cocobaseClient.createDocument(
+        "submissions",
+        submissionPayload,
+      );
+      return { id: document.id, ...submissionPayload };
+    } catch (error) {
+      console.warn(
+        "Cocobase submission save failed; using local fallback",
+        error,
+      );
+      const existing =
+        readStoredCollection<Record<string, unknown>>("zynk-submissions");
+      const nextItem = {
+        id: `local-submission-${Date.now()}`,
+        ...submissionPayload,
+      };
+      writeStoredCollection("zynk-submissions", [nextItem, ...existing]);
+      return nextItem;
+    }
+  },
+
+  async review(payload: {
+    taskId: string;
+    submissionId: string;
+    action: "approve" | "reject";
+    note?: string;
+  }) {
+    const reviewPayload = {
+      ...payload,
+      reviewedAt: new Date().toISOString(),
+    };
+
+    if (!cocobaseClient) {
+      const existing = readStoredCollection<Record<string, unknown>>(
+        "zynk-submission-reviews",
+      );
+      const nextItem = { id: `local-review-${Date.now()}`, ...reviewPayload };
+      writeStoredCollection("zynk-submission-reviews", [nextItem, ...existing]);
+      return nextItem;
+    }
+
+    try {
+      const document = await cocobaseClient.createDocument(
+        "submission_reviews",
+        reviewPayload,
+      );
+      return { id: document.id, ...reviewPayload };
+    } catch (error) {
+      console.warn("Cocobase review save failed; using local fallback", error);
+      const existing = readStoredCollection<Record<string, unknown>>(
+        "zynk-submission-reviews",
+      );
+      const nextItem = { id: `local-review-${Date.now()}`, ...reviewPayload };
+      writeStoredCollection("zynk-submission-reviews", [nextItem, ...existing]);
+      return nextItem;
+    }
+  },
+};
+
+export const cocobaseWallet = {
+  async requestWithdrawal(payload: {
+    userId: string;
+    amount: number;
+    method: string;
+    accountDetails: string;
+    status?: string;
+    createdAt?: string;
+  }) {
+    const withdrawalPayload = {
+      ...payload,
+      status: payload.status ?? "pending",
+      createdAt: payload.createdAt ?? new Date().toISOString(),
+    };
+
+    if (!cocobaseClient) {
+      const existing =
+        readStoredCollection<Record<string, unknown>>("zynk-withdrawals");
+      const nextItem = {
+        id: `local-withdrawal-${Date.now()}`,
+        ...withdrawalPayload,
+      };
+      writeStoredCollection("zynk-withdrawals", [nextItem, ...existing]);
+      return nextItem;
+    }
+
+    try {
+      const document = await cocobaseClient.createDocument(
+        "withdrawals",
+        withdrawalPayload,
+      );
+      return { id: document.id, ...withdrawalPayload };
+    } catch (error) {
+      console.warn(
+        "Cocobase withdrawal save failed; using local fallback",
+        error,
+      );
+      const existing =
+        readStoredCollection<Record<string, unknown>>("zynk-withdrawals");
+      const nextItem = {
+        id: `local-withdrawal-${Date.now()}`,
+        ...withdrawalPayload,
+      };
+      writeStoredCollection("zynk-withdrawals", [nextItem, ...existing]);
+      return nextItem;
+    }
+  },
+};
+
 export const cocobaseTasks = {
   // Purpose: load task records from Cocobase for the earner browse page and other task-driven views.
   async list() {

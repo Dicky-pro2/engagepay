@@ -5,7 +5,7 @@ import { Icons } from "../components/icons/Icons";
 import { useAuthStore } from "../store/authStore";
 import { useAppStore } from "../store/appStore";
 import { notify } from "../utils/notify";
-import { cocobaseAuth } from "../services/cocobase";
+import { cocobaseAuth, cocobaseProfile } from "../services/cocobase";
 import { LoadingSpinner } from "./Login";
 
 export default function Profile() {
@@ -34,12 +34,26 @@ export default function Profile() {
       setEditingName(false);
       return;
     }
+    if (!user?.id) {
+      notify.error("Your session is unavailable. Please sign in again.");
+      return;
+    }
+
     setSavingName(true);
-    await new Promise((r) => setTimeout(r, 500));
-    updateName(nameInput.trim());
-    notify.success("Name updated successfully!");
-    setSavingName(false);
-    setEditingName(false);
+    try {
+      await cocobaseProfile.updateName(user.id, nameInput.trim());
+      updateName(nameInput.trim());
+      notify.success("Name updated successfully!");
+      setEditingName(false);
+    } catch (error) {
+      notify.error(
+        error instanceof Error
+          ? error.message
+          : "Could not update your profile.",
+      );
+    } finally {
+      setSavingName(false);
+    }
   };
 
   const handleCancelEdit = () => {

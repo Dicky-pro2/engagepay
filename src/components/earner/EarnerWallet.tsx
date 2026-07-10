@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "../../store/authStore";
 import { useAppStore } from "../../store/appStore";
+import { cocobaseWallet } from "../../services/cocobase";
 import { notify } from "../../utils/notify";
 import { Icons } from "../icons/Icons";
 import type { WithdrawalMethod, TransactionType } from "../../types";
@@ -124,6 +125,7 @@ export default function EarnerWallet() {
   const [accountName, setAccountName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [bankName, setBankName] = useState(NIGERIAN_BANKS[0]);
+  const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "withdraw" | "history" | "withdrawals"
   >("withdraw");
@@ -139,7 +141,7 @@ export default function EarnerWallet() {
   const fee = amount ? calculateWithdrawalFee(parsedAmount) : 0;
   const netAmount = amount ? calculateNetWithdrawal(parsedAmount) : 0;
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const amt = Number(amount);
     if (!amt || amt < MIN_WITHDRAWAL) {
       notify.error(`Minimum withdrawal is ${MIN_WITHDRAWAL} coins`);
@@ -159,42 +161,58 @@ export default function EarnerWallet() {
       return;
     }
 
-    const methodLabel = METHODS.find((m) => m.key === method)?.label;
-    const formattedAccountDetails =
-      method === "bank_transfer"
-        ? `Bank: ${bankName} | Account Name: ${accountName} | Account Number: ${accountNumber}`
-        : accountDetails.trim();
+    setSubmittingWithdrawal(true);
 
-    updateWallet(user.walletBalance - amt);
-    addTransaction({
-      type: "withdrawal",
-      amount: -amt,
-      description: `Withdrawal via ${methodLabel} (${fee.toLocaleString()} fee)`,
-    });
-    addWithdrawal({
-      amount: amt,
-      method,
-      accountDetails: formattedAccountDetails,
-      bankName: method === "bank_transfer" ? bankName : undefined,
-      accountName: method === "bank_transfer" ? accountName : undefined,
-      accountNumber: method === "bank_transfer" ? accountNumber : undefined,
-    });
-    pushActivity(
-      `Withdrawal of ${amt.toLocaleString()} coins requested`,
-      "violet",
-    );
-    addNotification({
-      type: "withdrawal_processed",
-      title: "Withdrawal Requested",
-      message: `Your withdrawal of ${amt.toLocaleString()} coins via ${methodLabel} is being processed.`,
-    });
-    notify.success(`Withdrawal of ${amt.toLocaleString()} coins submitted!`);
+    try {
+      const methodLabel = METHODS.find((m) => m.key === method)?.label;
+      const formattedAccountDetails =
+        method === "bank_transfer"
+          ? `Bank: ${bankName} | Account Name: ${accountName} | Account Number: ${accountNumber}`
+          : accountDetails.trim();
 
-    setAmount("");
-    setAccountDetails("");
-    setAccountName("");
-    setAccountNumber("");
-    setBankName(NIGERIAN_BANKS[0]);
+      await cocobaseWallet.requestWithdrawal({
+        userId: user.id,
+        amount: amt,
+        method,
+        accountDetails: formattedAccountDetails,
+      });
+
+      updateWallet(user.walletBalance - amt);
+      addTransaction({
+        type: "withdrawal",
+        amount: -amt,
+        description: `Withdrawal via ${methodLabel} (${fee.toLocaleString()} fee)`,
+      });
+      addWithdrawal({
+        amount: amt,
+        method,
+        accountDetails: formattedAccountDetails,
+        bankName: method === "bank_transfer" ? bankName : undefined,
+        accountName: method === "bank_transfer" ? accountName : undefined,
+        accountNumber: method === "bank_transfer" ? accountNumber : undefined,
+      });
+      pushActivity(
+        `Withdrawal of ${amt.toLocaleString()} coins requested`,
+        "violet",
+      );
+      addNotification({
+        type: "withdrawal_processed",
+        title: "Withdrawal Requested",
+        message: `Your withdrawal of ${amt.toLocaleString()} coins via ${methodLabel} is being processed.`,
+      });
+      notify.success(`Withdrawal of ${amt.toLocaleString()} coins submitted!`);
+
+      setAmount("");
+      setAccountDetails("");
+      setAccountName("");
+      setAccountNumber("");
+      setBankName(NIGERIAN_BANKS[0]);
+    } catch (error) {
+      console.error("Failed to submit withdrawal", error);
+      notify.error("Could not submit your withdrawal request right now.");
+    } finally {
+      setSubmittingWithdrawal(false);
+    }
   };
 
   const selectedMethod = METHODS.find((m) => m.key === method)!;
@@ -385,8 +403,9 @@ export default function EarnerWallet() {
             </div>
 
             <button
-              onClick={handleWithdraw}
+              onClick={() => void handleWithdraw()}
               disabled={
+                submittingWithdrawal ||
                 !amount ||
                 Number(amount) < MIN_WITHDRAWAL ||
                 Number(amount) > (user?.walletBalance ?? 0)
@@ -394,7 +413,7 @@ export default function EarnerWallet() {
               className="btn-green w-full font-sora disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Icons.Send size={16} />
-              Request Withdrawal
+              {submittingWithdrawal ? "Submitting..." : "Request Withdrawal"}
             </button>
           </motion.div>
         )}
