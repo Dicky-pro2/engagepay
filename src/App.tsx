@@ -20,7 +20,13 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminWithdrawals from "./pages/admin/AdminWithdrawals";
 import AdminImpact from "./pages/admin/AdminImpact";
+import Referral from "./pages/Referral";
+import Leaderboard from "./pages/Leaderboard";
+import WithdrawalHistory from "./pages/WithdrawalHistory";
+import AdvertiserAnalytics from "./pages/AdvertiserAnalytics";
 import { useAuthStore } from "./store/authStore";
+import { ThemeProvider } from "./context/ThemeContext";
+import "./styles/theme.css";
 
 // Wraps a page component in a RouteErrorBoundary
 function SafePage({ children }: { children: React.ReactNode }) {
@@ -31,101 +37,70 @@ export default function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return (
-    <BrowserRouter>
-      <Toaster />
-      <Routes>
-        {/* Public */}
-        <Route
-          path="/"
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Landing />}
-        />
-        <Route
-          path="/login"
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />}
-        />
-        <Route
-          path="/signup"
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Signup />}
-        />
-        <Route
-          path="/forgot-password"
-          element={
-            isAuthenticated ? <Navigate to="/dashboard" /> : <ForgotPassword />
-          }
-        />
+    <ThemeProvider>
+      <BrowserRouter>
+        <Toaster />
+        <Routes>
+          {/* Public */}
+          <Route
+            path="/"
+            element={
+              isAuthenticated ? <Navigate to="/dashboard" /> : <Landing />
+            }
+          />
+          <Route
+            path="/login"
+            element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />}
+          />
+          <Route
+            path="/signup"
+            element={
+              isAuthenticated ? <Navigate to="/dashboard" /> : <Signup />
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              isAuthenticated ? (
+                <Navigate to="/dashboard" />
+              ) : (
+                <ForgotPassword />
+              )
+            }
+          />
 
-        {/* Verification */}
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/resend-verification" element={<ResendVerification />} />
+          {/* Verification */}
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/resend-verification" element={<ResendVerification />} />
 
-        {/* Protected */}
-        <Route
-          path="/dashboard"
-          element={
-            isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" />
-          }
-        >
+          {/* Protected */}
           <Route
-            index
+            path="/dashboard"
             element={
-              <SafePage>
-                <Overview />
-              </SafePage>
-            }
-          />
-          <Route
-            path="tasks"
-            element={
-              <SafePage>
-                <Tasks />
-              </SafePage>
-            }
-          />
-          <Route
-            path="wallet"
-            element={
-              <SafePage>
-                <Wallet />
-              </SafePage>
-            }
-          />
-          <Route
-            path="submissions"
-            element={
-              <SafePage>
-                <Submissions />
-              </SafePage>
-            }
-          />
-          <Route
-            path="review"
-            element={
-              <SafePage>
-                <Review />
-              </SafePage>
-            }
-          />
-          <Route
-            path="profile"
-            element={
-              <SafePage>
-                <Profile />
-              </SafePage>
-            }
-          />
-          <Route
-            path="admin"
-            element={
-              <SafePage>
-                <AdminLayout />
-              </SafePage>
+              isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" />
             }
           >
             <Route
               index
               element={
                 <SafePage>
-                  <AdminDashboard />
+                  <Overview />
+                </SafePage>
+              }
+            />
+            <Route
+              path="tasks"
+              element={
+                <SafePage>
+                  <Tasks />
+                </SafePage>
+              }
+            />
+            <Route
+              path="wallet"
+              element={
+                <SafePage>
+                  <Wallet />
                 </SafePage>
               }
             />
@@ -133,24 +108,97 @@ export default function App() {
               path="withdrawals"
               element={
                 <SafePage>
-                  <AdminWithdrawals />
+                  <WithdrawalHistory />
                 </SafePage>
               }
             />
             <Route
-              path="impact"
+              path="submissions"
               element={
                 <SafePage>
-                  <AdminImpact />
+                  <Submissions />
                 </SafePage>
               }
             />
+            <Route
+              path="review"
+              element={
+                <SafePage>
+                  <Review />
+                </SafePage>
+              }
+            />
+            <Route
+              path="profile"
+              element={
+                <SafePage>
+                  <Profile />
+                </SafePage>
+              }
+            />
+            <Route
+              path="referrals"
+              element={
+                <SafePage>
+                  <Referral />
+                </SafePage>
+              }
+            />
+            <Route
+              path="leaderboard"
+              element={
+                <SafePage>
+                  <Leaderboard />
+                </SafePage>
+              }
+            />
+            <Route
+              path="analytics"
+              element={
+                <SafePage>
+                  <AdvertiserAnalytics />
+                </SafePage>
+              }
+            />
+            <Route
+              path="admin"
+              element={
+                <SafePage>
+                  <AdminLayout />
+                </SafePage>
+              }
+            >
+              <Route
+                index
+                element={
+                  <SafePage>
+                    <AdminDashboard />
+                  </SafePage>
+                }
+              />
+              <Route
+                path="withdrawals"
+                element={
+                  <SafePage>
+                    <AdminWithdrawals />
+                  </SafePage>
+                }
+              />
+              <Route
+                path="impact"
+                element={
+                  <SafePage>
+                    <AdminImpact />
+                  </SafePage>
+                }
+              />
+            </Route>
           </Route>
-        </Route>
 
-        {/* 404 */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }

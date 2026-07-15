@@ -1,22 +1,16 @@
-import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
 import { Icons } from "../icons/Icons";
 import { useAuthStore } from "../../store/authStore";
-import { useAppStore } from "../../store/appStore";
 import { notify } from "../../utils/notify";
-import NotificationPanel from "./NotificationPanel";
 import VerificationBanner from "./VerificationBanner";
+import ThemeToggle from "../ThemeToggle";
+import NotificationCenter from "../NotificationCenter";
 
 export default function DashboardLayout() {
   const { user, logout } = useAuthStore();
-  const notifications = useAppStore((s) => s.notifications);
   const navigate = useNavigate();
-  const [showNotifications, setShowNotifications] = useState(false);
   const isAdvertiser = user?.role === "advertiser";
   const isAdmin = user?.role === "admin";
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const handleLogout = () => {
     logout();
@@ -33,6 +27,18 @@ export default function DashboardLayout() {
       label: "Wallet",
       end: false,
     },
+    {
+      to: "/dashboard/leaderboard",
+      icon: Icons.Tasks,
+      label: "Leaderboard",
+      end: false,
+    },
+    {
+      to: "/dashboard/referrals",
+      icon: Icons.Tasks,
+      label: "Referrals",
+      end: false,
+    },
     ...(isAdvertiser
       ? [
           {
@@ -41,12 +47,24 @@ export default function DashboardLayout() {
             label: "Review",
             end: false,
           },
+          {
+            to: "/dashboard/analytics",
+            icon: Icons.Tasks,
+            label: "Analytics",
+            end: false,
+          },
         ]
       : [
           {
             to: "/dashboard/submissions",
             icon: Icons.Submissions,
             label: "Submissions",
+            end: false,
+          },
+          {
+            to: "/dashboard/withdrawals",
+            icon: Icons.Wallet,
+            label: "Withdrawals",
             end: false,
           },
         ]),
@@ -92,6 +110,7 @@ export default function DashboardLayout() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
             <div
               className={`hidden sm:flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold border ${
                 isAdvertiser
@@ -119,26 +138,7 @@ export default function DashboardLayout() {
               <span>{(user?.walletBalance ?? 0).toLocaleString()}</span>
             </div>
 
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications((v) => !v)}
-                className="border border-border rounded-full p-1.5 sm:p-2 text-slatec hover:text-white hover:border-violet-light transition-all relative"
-              >
-                <Icons.Bell size={16} />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-violet rounded-full text-white text-[10px] font-bold flex items-center justify-center">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </button>
-              <AnimatePresence>
-                {showNotifications && (
-                  <NotificationPanel
-                    onClose={() => setShowNotifications(false)}
-                  />
-                )}
-              </AnimatePresence>
-            </div>
+            <NotificationCenter />
 
             <NavLink
               to="/dashboard/profile"

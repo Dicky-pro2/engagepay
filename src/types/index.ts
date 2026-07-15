@@ -13,6 +13,16 @@ export interface User {
   tasksCompleted: number;
   tasksPosted: number;
   isEmailVerified: boolean;
+  // New features
+  taskQualityScore: number; // 0-100, affects task visibility for earners
+  currentStreak: number; // days
+  longestStreak: number; // days
+  lastTaskCompletionDate?: string;
+  referralCode?: string;
+  referralsCount: number;
+  referralEarnings: number;
+  referralLevel: number; // 1-5
+  theme: "light" | "dark"; // user theme preference
 }
 
 export interface ActivityItem {
@@ -58,6 +68,10 @@ export interface Task {
   createdAt: string;
   completedByCurrentUser?: boolean;
   taskSubmissions?: TaskSubmission[];
+  // New analytics fields
+  minQualityScore?: number; // minimum quality score required to see this task
+  totalClicks?: number; // for analytics
+  costPerTask?: number; // for analytics
 }
 
 export type WithdrawalMethod =
@@ -122,4 +136,66 @@ export interface TaskSubmission {
   status: "pending" | "approved" | "rejected";
   reviewNote?: string;
   createdAt: string;
+}
+
+// New types for features
+export interface ReferralReward {
+  level: number;
+  bonusPercentage: number;
+  minimumReferrals: number;
+  description: string;
+}
+
+export interface ReferralUser {
+  id: string;
+  name: string;
+  email: string;
+  tasksCompleted: number;
+  referredAt: string;
+  earnings: number;
+}
+
+export interface ReferralData {
+  code: string;
+  level: number;
+  totalReferrals: number;
+  totalEarnings: number;
+  referredUsers: ReferralUser[];
+}
+
+export interface StreakBonus {
+  day: number;
+  bonusPercentage: number;
+  milestone?: boolean; // true if this is a special milestone day (7, 14, 30, etc)
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  name: string;
+  avatar: string | null;
+  score: number; // Can be total earned, tasks completed, or streak
+  metric: string; // "earnings", "tasks_completed", "streak"
+}
+
+export interface AdvertiserAnalytics {
+  advertiserId: string;
+  totalTasksPosted: number;
+  totalCompletions: number;
+  completionRate: number; // percentage
+  totalClicks: number;
+  totalCostPerTask: number;
+  averageCostPerCompletion: number;
+  totalSpent: number;
+  tasksData: TaskAnalyticsData[];
+}
+
+export interface TaskAnalyticsData {
+  taskId: string;
+  title: string;
+  posted: string;
+  completions: number;
+  clicks: number;
+  costPerTask: number;
+  status: Task["status"];
 }

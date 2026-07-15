@@ -158,6 +158,13 @@ function createLocalAuthResult(user: LocalAuthUser) {
     tasksCompleted: user.tasksCompleted,
     tasksPosted: user.tasksPosted,
     isEmailVerified: user.isEmailVerified,
+    taskQualityScore: 100,
+    currentStreak: 0,
+    longestStreak: 0,
+    referralsCount: 0,
+    referralEarnings: 0,
+    referralLevel: 1,
+    theme: "light",
   };
 
   return {
@@ -297,6 +304,13 @@ export function normalizeUser(
     tasksCompleted: asNumber(data.tasksCompleted),
     tasksPosted: asNumber(data.tasksPosted),
     isEmailVerified: asBoolean(data.isEmailVerified, true),
+    taskQualityScore: asNumber(data.taskQualityScore) || 100,
+    currentStreak: asNumber(data.currentStreak) || 0,
+    longestStreak: asNumber(data.longestStreak) || 0,
+    referralsCount: asNumber(data.referralsCount) || 0,
+    referralEarnings: asNumber(data.referralEarnings) || 0,
+    referralLevel: asNumber(data.referralLevel) || 1,
+    theme: (asString(data.theme) ?? "light") as "light" | "dark",
   };
 }
 
@@ -444,6 +458,17 @@ function normalizeBackendUser(
       ),
       true,
     ),
+    taskQualityScore:
+      asNumber(pickFirstDefined(mergedData.taskQualityScore)) || 100,
+    currentStreak: asNumber(pickFirstDefined(mergedData.currentStreak)) || 0,
+    longestStreak: asNumber(pickFirstDefined(mergedData.longestStreak)) || 0,
+    referralsCount: asNumber(pickFirstDefined(mergedData.referralsCount)) || 0,
+    referralEarnings:
+      asNumber(pickFirstDefined(mergedData.referralEarnings)) || 0,
+    referralLevel: asNumber(pickFirstDefined(mergedData.referralLevel)) || 1,
+    theme: (asString(pickFirstDefined(mergedData.theme)) ?? "light") as
+      | "light"
+      | "dark",
   };
 }
 

@@ -257,3 +257,151 @@ export const adminAPI = {
     return apiClient.patch(`/admin/withdrawals/${id}`, data);
   },
 };
+
+// ── Referral API ──
+export const referralAPI = {
+  getMyReferralData: () => {
+    if (env.IS_MOCK)
+      return Promise.resolve({
+        data: {
+          code: "ZNKTEST",
+          level: 1,
+          totalReferrals: 0,
+          totalEarnings: 0,
+          referredUsers: [],
+        },
+      });
+    return apiClient.get("/referrals/me");
+  },
+
+  getReferralCode: () => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { code: "ZNKTEST" } });
+    return apiClient.get("/referrals/code");
+  },
+
+  claimReferralBonus: () => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { message: "mock" } });
+    return apiClient.post("/referrals/claim-bonus");
+  },
+
+  getReferralStats: () => {
+    if (env.IS_MOCK)
+      return Promise.resolve({
+        data: { level: 1, bonus: 5, totalReferrals: 0 },
+      });
+    return apiClient.get("/referrals/stats");
+  },
+};
+
+// ── Gamification API ──
+export const gamificationAPI = {
+  getLeaderboard: (
+    metric: "earnings" | "tasks" | "streak",
+    limit: number = 100,
+  ) => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { entries: [] } });
+    return apiClient.get(`/gamification/leaderboard/${metric}`, {
+      params: { limit },
+    });
+  },
+
+  getMyStreak: () => {
+    if (env.IS_MOCK)
+      return Promise.resolve({
+        data: { current: 0, longest: 0, bonus: 0 },
+      });
+    return apiClient.get("/gamification/streak");
+  },
+
+  updateStreak: () => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { streak: 0 } });
+    return apiClient.post("/gamification/streak/update");
+  },
+
+  getStreakHistory: () => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { history: [] } });
+    return apiClient.get("/gamification/streak/history");
+  },
+};
+
+// ── Quality Score API ──
+export const qualityScoreAPI = {
+  getMyScore: () => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { score: 100 } });
+    return apiClient.get("/quality-score/me");
+  },
+
+  getScoreHistory: () => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { history: [] } });
+    return apiClient.get("/quality-score/history");
+  },
+
+  updateScore: () => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { score: 100 } });
+    return apiClient.post("/quality-score/update");
+  },
+
+  getFilteredTasks: (minQualityScore?: number) => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { tasks: [] } });
+    return apiClient.get("/quality-score/filtered-tasks", {
+      params: { minQualityScore },
+    });
+  },
+};
+
+// ── Analytics API ──
+export const analyticsAPI = {
+  getAdvertiserAnalytics: () => {
+    if (env.IS_MOCK)
+      return Promise.resolve({
+        data: {
+          totalTasksPosted: 0,
+          totalCompletions: 0,
+          completionRate: 0,
+          totalClicks: 0,
+          totalCostPerTask: 0,
+          averageCostPerCompletion: 0,
+          totalSpent: 0,
+          tasksData: [],
+        },
+      });
+    return apiClient.get("/analytics/advertiser");
+  },
+
+  getTaskAnalytics: (taskId: string) => {
+    if (env.IS_MOCK)
+      return Promise.resolve({
+        data: {
+          taskId,
+          completions: 0,
+          clicks: 0,
+          revenue: 0,
+        },
+      });
+    return apiClient.get(`/analytics/tasks/${taskId}`);
+  },
+
+  recordTaskClick: (taskId: string) => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { message: "mock" } });
+    return apiClient.post(`/analytics/tasks/${taskId}/click`);
+  },
+
+  recordTaskCompletion: (taskId: string) => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { message: "mock" } });
+    return apiClient.post(`/analytics/tasks/${taskId}/completion`);
+  },
+
+  getAnalyticsSummary: (period: "day" | "week" | "month" = "week") => {
+    if (env.IS_MOCK)
+      return Promise.resolve({
+        data: {
+          period,
+          totalEarnings: 0,
+          totalSpent: 0,
+          totalTasks: 0,
+          growth: 0,
+        },
+      });
+    return apiClient.get("/analytics/summary", { params: { period } });
+  },
+};
