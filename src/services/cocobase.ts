@@ -6,7 +6,6 @@ import type { Role, Task, User } from "../types";
 const hasCocobaseConfig = Boolean(
   env.COCOBASE_API_KEY && env.COCOBASE_PROJECT_ID,
 );
-const SHARED_TASKS_STORAGE_KEY = "zynk-shared-tasks";
 const LOCAL_AUTH_USERS_STORAGE_KEY = "zynk-local-auth-users";
 
 type LocalAuthUser = {
