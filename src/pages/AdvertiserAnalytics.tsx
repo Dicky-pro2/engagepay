@@ -2,12 +2,10 @@ import { useState } from "react";
 import {
   BarChart3,
   TrendingUp,
-  Users,
   DollarSign,
   Eye,
   CheckCircle,
   Calendar,
-  Filter,
 } from "lucide-react";
 import { useQualityScoreStore } from "../store/qualityScoreStore";
 import { useAuthStore } from "../store/authStore";

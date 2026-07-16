@@ -1,7 +1,6 @@
-import { Flame, Target, TrendingUp, Award } from "lucide-react";
+import { Flame, Target, } from "lucide-react";
 import {
   useGamificationStore,
-  STREAK_BONUSES,
 } from "../store/gamificationStore";
 import { useQualityScoreStore } from "../store/qualityScoreStore";
 import { useAuthStore } from "../store/authStore";

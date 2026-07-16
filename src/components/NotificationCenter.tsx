@@ -1,4 +1,4 @@
-import { Bell, X, Check, AlertCircle, Gift, Clock } from "lucide-react";
+import { Bell, Check, AlertCircle, Gift, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAppStore } from "../store/appStore";
 
