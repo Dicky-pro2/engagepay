@@ -1,15 +1,7 @@
 import { useState } from "react";
-import {
-  CreditCard,
-  DollarSign,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  XCircle,
-  Download,
-  Filter,
-} from "lucide-react";
 import { useAppStore } from "../store/appStore";
+import { Icons } from "../components/icons/Icons";
+import { motion } from "framer-motion";
 import type { WithdrawalStatus } from "../types";
 
 type FilterStatus = WithdrawalStatus | "all";
@@ -31,27 +23,15 @@ export default function WithdrawalHistoryPage() {
     .filter((w) => w.status === "pending" || w.status === "processing")
     .reduce((sum, w) => sum + w.amount, 0);
 
-  const getStatusIcon = (status: WithdrawalStatus) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case "pending":
-      case "processing":
-        return <Clock className="w-5 h-5 text-yellow-500" />;
-      case "rejected":
-        return <XCircle className="w-5 h-5 text-red-500" />;
-    }
-  };
-
   const getStatusColor = (status: WithdrawalStatus) => {
     switch (status) {
       case "completed":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+        return "bg-emerald2/15 text-emerald2";
       case "pending":
       case "processing":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+        return "bg-amber-400/15 text-amber-400";
       case "rejected":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+        return "bg-red-500/15 text-red-400";
     }
   };
 
@@ -66,212 +46,130 @@ export default function WithdrawalHistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            💰 Withdrawal History
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Track all your withdrawals and transactions
-          </p>
-        </div>
+    <div className="space-y-5 sm:space-y-6 max-w-4xl">
+      {/* Header */}
+      <div>
+        <h1 className="font-sora font-bold text-xl sm:text-2xl mb-1">
+          Withdrawal History
+        </h1>
+        <p className="text-slatec text-xs sm:text-sm">Track your withdrawals</p>
+      </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  Total Withdrawn
-                </p>
-                <p className="text-3xl font-bold text-green-600">
-                  ${totalWithdrawn.toFixed(2)}
-                </p>
-              </div>
-              <CheckCircle className="w-12 h-12 text-green-500 opacity-20" />
-            </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card p-4 sm:p-5"
+        >
+          <div className="text-xs text-slatec uppercase tracking-wide font-semibold mb-2">
+            Total Withdrawn
           </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  Pending
-                </p>
-                <p className="text-3xl font-bold text-yellow-600">
-                  ${pendingAmount.toFixed(2)}
-                </p>
-              </div>
-              <Clock className="w-12 h-12 text-yellow-500 opacity-20" />
-            </div>
+          <div className="font-sora font-bold text-xl sm:text-2xl text-emerald2">
+            ${totalWithdrawn.toFixed(2)}
           </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  Total Requests
-                </p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {withdrawals.length}
-                </p>
-              </div>
-              <CreditCard className="w-12 h-12 text-purple-500 opacity-20" />
-            </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="card p-4 sm:p-5"
+        >
+          <div className="text-xs text-slatec uppercase tracking-wide font-semibold mb-2">
+            Pending
           </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 mb-6">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            <button
-              onClick={() => setFilterStatus("all")}
-              className={`px-4 py-2 rounded transition-colors ${
-                filterStatus === "all"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-slate-600"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilterStatus("completed")}
-              className={`px-4 py-2 rounded transition-colors ${
-                filterStatus === "completed"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-slate-600"
-              }`}
-            >
-              Completed
-            </button>
-            <button
-              onClick={() => setFilterStatus("pending")}
-              className={`px-4 py-2 rounded transition-colors ${
-                filterStatus === "pending"
-                  ? "bg-yellow-600 text-white"
-                  : "bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-slate-600"
-              }`}
-            >
-              Pending
-            </button>
-            <button
-              onClick={() => setFilterStatus("rejected")}
-              className={`px-4 py-2 rounded transition-colors ${
-                filterStatus === "rejected"
-                  ? "bg-red-600 text-white"
-                  : "bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-slate-600"
-              }`}
-            >
-              Rejected
-            </button>
+          <div className="font-sora font-bold text-xl sm:text-2xl text-amber-400">
+            ${pendingAmount.toFixed(2)}
           </div>
-        </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="card p-4 sm:p-5"
+        >
+          <div className="text-xs text-slatec uppercase tracking-wide font-semibold mb-2">
+            Total Requests
+          </div>
+          <div className="font-sora font-bold text-xl sm:text-2xl text-violet-light">
+            {withdrawals.length}
+          </div>
+        </motion.div>
+      </div>
 
-        {/* Withdrawals List */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
-          {filteredWithdrawals.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-600">
-                  <tr>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-900 dark:text-white">
-                      Date
-                    </th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-900 dark:text-white">
-                      Amount
-                    </th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-900 dark:text-white">
-                      Method
-                    </th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-900 dark:text-white">
-                      Status
-                    </th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-900 dark:text-white">
-                      Details
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredWithdrawals.map((withdrawal) => (
-                    <tr
-                      key={withdrawal.id}
-                      className="border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      <td className="py-4 px-6 text-gray-900 dark:text-white">
-                        <div>
-                          <p className="font-medium">
-                            {new Date(
-                              withdrawal.createdAt,
-                            ).toLocaleDateString()}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {new Date(
-                              withdrawal.createdAt,
-                            ).toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <p className="font-bold text-gray-900 dark:text-white">
-                          ${withdrawal.amount.toFixed(2)}
-                        </p>
-                      </td>
-                      <td className="py-4 px-6 text-gray-900 dark:text-white">
-                        {getMethodLabel(withdrawal.method)}
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(withdrawal.status)}
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getStatusColor(withdrawal.status)}`}
-                          >
-                            {withdrawal.status}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-400">
-                        {withdrawal.accountName || withdrawal.accountNumber
-                          ? `${withdrawal.accountName || "Account"}`
-                          : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="py-12 text-center">
-              <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">
-                No withdrawals found with the selected filter
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Export Button */}
-        <div className="mt-6 flex justify-end">
-          <button className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors">
-            <Download className="w-4 h-4" />
-            Export as CSV
+      {/* Filters */}
+      <div className="card p-2 flex gap-1.5 flex-wrap">
+        {["all", "completed", "pending", "rejected"].map((status) => (
+          <button
+            key={status}
+            onClick={() => setFilterStatus(status as FilterStatus)}
+            className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              filterStatus === status
+                ? "bg-violet text-white"
+                : "text-slatec hover:bg-bg-secondary"
+            }`}
+          >
+            {status === "all" && "All"}
+            {status === "completed" && "Completed"}
+            {status === "pending" && "Pending"}
+            {status === "rejected" && "Rejected"}
           </button>
-        </div>
+        ))}
+      </div>
 
-        {/* Help Section */}
-        <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-          <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
-            💡 About Withdrawals
-          </h3>
-          <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-300">
-            <li>✓ Withdrawals typically process within 3-5 business days</li>
-            <li>✓ Minimum withdrawal amount: $5.00</li>
-            <li>✓ Maximum: $5000 per transaction</li>
-            <li>✓ Verify your payment method before requesting a withdrawal</li>
-          </ul>
+      {/* Withdrawals List */}
+      <div>
+        {filteredWithdrawals.length > 0 ? (
+          <div className="space-y-2">
+            {filteredWithdrawals.map((w, idx) => (
+              <motion.div
+                key={w.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.02 }}
+                className="card p-3 sm:p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-sm mb-1">
+                      ${w.amount.toFixed(2)}
+                    </div>
+                    <div className="text-xs text-slatec mb-2">
+                      {getMethodLabel(w.method)}
+                    </div>
+                    <div className="text-xs text-slatec">
+                      {new Date(w.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 capitalize ${getStatusColor(
+                      w.status,
+                    )}`}
+                  >
+                    {w.status}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="card p-6 sm:p-8 text-center text-slatec">
+            <Icons.CoinOut size={24} className="mx-auto mb-2 opacity-30" />
+            <p className="text-xs sm:text-sm">No withdrawals found</p>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="card p-4 sm:p-5 bg-amber-400/10 border-amber-400/30">
+        <div className="text-xs text-amber-400 uppercase tracking-wide font-semibold mb-2 flex items-center gap-1.5">
+          <Icons.Info size={13} /> Info
         </div>
+        <ul className="space-y-1 text-xs text-slatec">
+          <li>✓ Processing time: 3-5 business days</li>
+          <li>✓ Minimum: $5 | Maximum: $5000</li>
+          <li>✓ Verify your payment method first</li>
+        </ul>
       </div>
     </div>
   );

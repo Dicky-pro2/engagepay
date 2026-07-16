@@ -54,6 +54,10 @@ export const Icons = {
   Warning: LucideIcons.AlertTriangle,
   Success: LucideIcons.CheckCircle2,
   Error: LucideIcons.XCircle,
+  Trophy: LucideIcons.Trophy,
+  Award: LucideIcons.Award,
+  Share: LucideIcons.Share2,
+  Users: LucideIcons.Users,
 
   // Finance
   CoinIn: LucideIcons.ArrowDownCircle,

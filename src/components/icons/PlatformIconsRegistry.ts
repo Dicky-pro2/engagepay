@@ -17,13 +17,13 @@ const PLATFORM_MAP: Record<string, PlatformMeta> = {
   },
   "Twitter/X": {
     path: simpleIcons.siX.path,
-    color: "#FFFFFF",
-    hex: "FFFFFF",
+    color: "currentColor",
+    hex: "000000",
   },
   TikTok: {
     path: simpleIcons.siTiktok.path,
-    color: "#FFFFFF",
-    hex: "FFFFFF",
+    color: "currentColor",
+    hex: "000000",
   },
   YouTube: {
     path: simpleIcons.siYoutube.path,

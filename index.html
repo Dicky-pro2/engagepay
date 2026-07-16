@@ -19,12 +19,46 @@
         theme: {
           extend: {
             colors: {
-              navy: { DEFAULT: "#0A0F1E", 2: "#111827" },
-              card: "#151D2E",
-              border: "#1E2D45",
-              violet: { DEFAULT: "#7C3AED", light: "#A78BFA", dark: "#6D28D9" },
-              slatec: "#94A3B8",
-              emerald2: { DEFAULT: "#10B981", dim: "rgba(16,185,129,0.15)" },
+              navy: { DEFAULT: "var(--bg-primary)", 2: "var(--bg-secondary)" },
+              card: "var(--card-bg)",
+              border: "var(--border-color)",
+              violet: {
+                DEFAULT: "var(--accent-color)",
+                light: "#A78BFA",
+                dark: "#6D28D9",
+              },
+              slatec: "var(--text-secondary)",
+              emerald2: {
+                DEFAULT: "var(--success-color)",
+                dim: "rgba(16,185,129,0.15)",
+              },
+            },
+            fontFamily: {
+              sora: ["Sora", "sans-serif"],
+              inter: ["Inter", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              navy: { DEFAULT: "var(--bg-primary)", 2: "var(--bg-secondary)" },
+              card: "var(--card-bg)",
+              border: "var(--border-color)",
+              violet: {
+                DEFAULT: "var(--accent-color)",
+                light: "#A78BFA",
+                dark: "#6D28D9",
+              },
+              slatec: "var(--text-secondary)",
+              emerald2: {
+                DEFAULT: "var(--success-color)",
+                dim: "rgba(16,185,129,0.15)",
+              },
             },
             fontFamily: {
               sora: ["Sora", "sans-serif"],

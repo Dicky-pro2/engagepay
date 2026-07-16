@@ -27,30 +27,12 @@ export default function DashboardLayout() {
       label: "Wallet",
       end: false,
     },
-    {
-      to: "/dashboard/leaderboard",
-      icon: Icons.Tasks,
-      label: "Leaderboard",
-      end: false,
-    },
-    {
-      to: "/dashboard/referrals",
-      icon: Icons.Tasks,
-      label: "Referrals",
-      end: false,
-    },
     ...(isAdvertiser
       ? [
           {
             to: "/dashboard/review",
             icon: Icons.Review,
             label: "Review",
-            end: false,
-          },
-          {
-            to: "/dashboard/analytics",
-            icon: Icons.Tasks,
-            label: "Analytics",
             end: false,
           },
         ]
@@ -80,6 +62,7 @@ export default function DashboardLayout() {
       : []),
   ];
 
+  
   return (
     <div className="min-h-screen bg-navy">
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-navy/90 border-b border-border">

@@ -1,7 +1,8 @@
-import { Users, Copy, Check, TrendingUp, Award } from "lucide-react";
-import { useState } from "react";
 import { useReferralStore, REFERRAL_TIERS } from "../store/referralStore";
 import { useAuthStore } from "../store/authStore";
+import { Icons } from "../components/icons/Icons";
+import { motion } from "framer-motion";
+import { useState } from "react";
 
 export default function ReferralPage() {
   const { referralData, getReferralLevel } = useReferralStore();
@@ -11,7 +12,7 @@ export default function ReferralPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-500">Please log in</p>
+        <p className="text-slatec">Please log in</p>
       </div>
     );
   }
@@ -35,209 +36,184 @@ export default function ReferralPage() {
     (nextTier?.minimumReferrals || 0) - (referralData?.totalReferrals || 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            🚀 Referral Program
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Earn money by inviting friends to ZynkBuzz
-          </p>
-        </div>
+    <div className="space-y-5 sm:space-y-6 max-w-4xl">
+      {/* Header */}
+      <div>
+        <h1 className="font-sora font-bold text-xl sm:text-2xl mb-1">
+          Referral Program
+        </h1>
+        <p className="text-slatec text-xs sm:text-sm">
+          Earn by inviting friends to ZynkBuzz
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Referral Code Card */}
-          <div className="lg:col-span-1 bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Your Code
-              </h2>
-              <Users className="w-6 h-6 text-purple-600" />
-            </div>
-
-            <div className="bg-purple-50 dark:bg-slate-700 rounded-lg p-4 mb-4">
-              <p className="text-center text-2xl font-mono font-bold text-purple-600 dark:text-purple-400">
-                {referralCode}
-              </p>
-            </div>
-
-            <button
-              onClick={copyToClipboard}
-              className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  Copy Code
-                </>
-              )}
-            </button>
+      {/* Top Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        {/* Referral Code */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card p-4 sm:p-5"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs text-slatec uppercase tracking-wide font-semibold">
+              Your Code
+            </span>
+            <Icons.Share size={14} />
           </div>
-
-          {/* Stats */}
-          <div className="lg:col-span-1 bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Your Stats
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Referrals
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {referralData?.totalReferrals || 0}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Referral Earnings
-                </p>
-                <p className="text-2xl font-bold text-green-600">
-                  ${(referralData?.totalEarnings || 0).toFixed(2)}
-                </p>
-              </div>
-            </div>
+          <div className="bg-violet/15 rounded-lg p-3 mb-3 text-center">
+            <p className="font-sora font-bold text-xl text-violet-light">
+              {referralCode}
+            </p>
           </div>
-
-          {/* Current Level */}
-          <div className="lg:col-span-1 bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Current Level
-            </h2>
-
-            <div className="flex items-center gap-4 mb-4">
-              <Award className="w-8 h-8 text-yellow-500" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Level {currentLevel}
-                </p>
-                <p className="font-bold text-gray-900 dark:text-white">
-                  {currentTier?.description}
-                </p>
-              </div>
-            </div>
-
-            {nextTier && (
-              <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Next level in {Math.max(0, referralsNeeded)} referrals
-                </p>
-                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
-                  <div
-                    className="bg-purple-600 h-2 rounded-full transition-all"
-                    style={{
-                      width: `${((referralData?.totalReferrals || 0) / (nextTier.minimumReferrals || 1)) * 100}%`,
-                    }}
-                  />
-                </div>
-              </div>
+          <button
+            onClick={copyToClipboard}
+            className="btn-primary w-full text-xs sm:text-sm py-1.5 flex items-center justify-center gap-1"
+          >
+            {copied ? (
+              <>
+                <Icons.Confirm size={14} /> Copied!
+              </>
+            ) : (
+              <>
+                <Icons.Copy size={14} /> Copy
+              </>
             )}
+          </button>
+        </motion.div>
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="card p-4 sm:p-5"
+        >
+          <div className="text-xs text-slatec uppercase tracking-wide font-semibold mb-3">
+            Referrals
           </div>
+          <div className="space-y-3">
+            <div>
+              <div className="text-xs text-slatec mb-0.5">Total</div>
+              <div className="font-sora font-bold text-lg text-violet-light">
+                {referralData?.totalReferrals || 0}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-slatec mb-0.5">Earnings</div>
+              <div className="font-sora font-bold text-lg text-emerald2">
+                ${(referralData?.totalEarnings || 0).toFixed(2)}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Level */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="card p-4 sm:p-5"
+        >
+          <div className="text-xs text-slatec uppercase tracking-wide font-semibold mb-3">
+            Current Level
+          </div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-2xl">⭐</span>
+            <div>
+              <div className="font-sora font-bold text-lg text-white">
+                Level {currentLevel}
+              </div>
+              <div className="text-xs text-slatec">
+                {currentTier?.description}
+              </div>
+            </div>
+          </div>
+          {nextTier && (
+            <div className="pt-2 border-t border-border">
+              <div className="text-xs text-slatec mb-1.5">
+                {Math.max(0, referralsNeeded)} to next
+              </div>
+              <div className="w-full bg-bg-secondary rounded-full h-1.5">
+                <div
+                  className="bg-violet-light h-1.5 rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(100, ((referralData?.totalReferrals || 0) / (nextTier.minimumReferrals || 1)) * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Tiers */}
+      <div>
+        <h2 className="font-sora font-bold text-base mb-3 flex items-center gap-2">
+          <Icons.Award size={15} /> Referral Tiers
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
+          {REFERRAL_TIERS.map((tier, idx) => (
+            <motion.div
+              key={tier.level}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className={`card p-3 text-center ${currentLevel >= tier.level ? "border-violet/50" : "border-border/50"}`}
+            >
+              <div className="text-xs text-slatec uppercase font-bold mb-1">
+                Lvl {tier.level}
+              </div>
+              <div className="text-lg font-sora font-bold text-violet-light mb-1">
+                {tier.bonusPercentage}%
+              </div>
+              <div className="text-xs text-slatec">
+                {tier.minimumReferrals}+
+              </div>
+            </motion.div>
+          ))}
         </div>
+      </div>
 
-        {/* Referral Tiers */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-            Referral Tiers
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {REFERRAL_TIERS.map((tier) => (
+      {/* Referrals List */}
+      <div>
+        <h2 className="font-sora font-bold text-base mb-3 flex items-center gap-2">
+          <Icons.Users size={15} /> Your Referrals (
+          {referralData?.totalReferrals || 0})
+        </h2>
+        {referralData?.referredUsers &&
+        referralData.referredUsers.length > 0 ? (
+          <div className="space-y-2">
+            {referralData.referredUsers.map((ref) => (
               <div
-                key={tier.level}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  currentLevel >= tier.level
-                    ? "border-purple-600 bg-purple-50 dark:bg-slate-700"
-                    : "border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900"
-                }`}
+                key={ref.id}
+                className="card p-3 sm:p-4 flex items-center justify-between"
               >
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
-                    Level {tier.level}
-                  </p>
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-                    {tier.bonusPercentage}%
-                  </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                    {tier.minimumReferrals}+ referrals
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">
-                    {tier.description}
-                  </p>
+                <div>
+                  <div className="font-semibold text-sm">{ref.name}</div>
+                  <div className="text-xs text-slatec">
+                    {ref.tasksCompleted} tasks
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-emerald2 text-sm">
+                    ${ref.earnings.toFixed(2)}
+                  </div>
+                  <div className="text-xs text-slatec">
+                    {new Date(ref.referredAt).toLocaleDateString()}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Referred Users */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Your Referrals ({referralData?.totalReferrals || 0})
-          </h2>
-
-          {referralData?.referredUsers &&
-          referralData.referredUsers.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-slate-700">
-                    <th className="text-left py-2 px-4 font-semibold text-gray-900 dark:text-white">
-                      Name
-                    </th>
-                    <th className="text-left py-2 px-4 font-semibold text-gray-900 dark:text-white">
-                      Tasks
-                    </th>
-                    <th className="text-left py-2 px-4 font-semibold text-gray-900 dark:text-white">
-                      Earnings
-                    </th>
-                    <th className="text-left py-2 px-4 font-semibold text-gray-900 dark:text-white">
-                      Date
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {referralData.referredUsers.map((referred) => (
-                    <tr
-                      key={referred.id}
-                      className="border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700"
-                    >
-                      <td className="py-3 px-4 text-gray-900 dark:text-white">
-                        {referred.name}
-                      </td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                        {referred.tasksCompleted}
-                      </td>
-                      <td className="py-3 px-4 font-semibold text-green-600">
-                        ${referred.earnings.toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4 text-gray-500 dark:text-gray-500">
-                        {new Date(referred.referredAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">
-                No referrals yet. Share your code to earn!
-              </p>
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className="card p-6 sm:p-8 text-center text-slatec">
+            <Icons.Users size={24} className="mx-auto mb-2 opacity-30" />
+            <p className="text-xs sm:text-sm">
+              No referrals yet. Share your code to get started!
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
