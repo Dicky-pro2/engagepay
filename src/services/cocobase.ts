@@ -713,10 +713,48 @@ export const cocobaseAuth = {
     return true;
   },
 
-  async forgotPassword(email: string) {
-    if (!cocobaseClient) return true;
-    await cocobaseClient.auth.requestPasswordReset(email);
+ async forgotPassword(email: string) {
+    try {
+      await authAPI.forgotPassword(email);
+      return true;
+    } catch (error) {
+      console.warn(
+        "Backend forgotPassword failed; trying Cocobase directly",
+        error,
+      );
+    }
+
+    if (cocobaseClient) {
+      try {
+        await cocobaseClient.auth.requestPasswordReset(email);
+        return true;
+      } catch (error) {
+        console.warn("Cocobase requestPasswordReset failed", error);
+      }
+    }
+
+    // Never reveal whether the email exists — always resolve successfully.
     return true;
+  },
+
+  async resetPassword(token: string, password: string) {
+    try {
+      await authAPI.resetPassword(token, password);
+      return true;
+    } catch (error) {
+      throw normalizeAuthError(error);
+    }
+  },
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    try {
+      await authAPI.changePassword({ currentPassword, newPassword });
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to change password.";
+      throw new Error(message);
+    }
   },
 };
 

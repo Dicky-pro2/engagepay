@@ -238,18 +238,34 @@ export default function Profile() {
       </RowSection>
 
       {/* Account Actions */}
-      <RowSection label="Account Actions">
-        <ProfileRow
-          icon={Icons.Logout}
-          label="Log Out"
-          danger
-          onClick={() => {
-            logout();
-            notify.info("Logged out successfully");
-            navigate("/");
-          }}
-        />
-      </RowSection>
+      <div>
+        <h2 className="font-sora font-bold text-base mb-3 flex items-center gap-2">
+          <Icons.Warning size={15} /> Account Actions
+        </h2>
+        <div className="space-y-3">
+          <ChangePasswordCard />
+          <div className="card p-5">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <div className="text-sm font-semibold">Log out</div>
+                <div className="text-xs text-slatec">
+                  Sign out of your account on this device.
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  logout();
+                  notify.info("Logged out successfully");
+                  navigate("/");
+                }}
+                className="border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-xl px-4 py-2 text-sm font-semibold transition-all flex items-center gap-2"
+              >
+                <Icons.Logout size={15} /> Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -354,4 +370,130 @@ function Component({
   [key: string]: any;
 }) {
   return <As {...props} />;
+}
+
+function ChangePasswordCard() {
+  const [expanded, setExpanded] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+    if (!currentPassword) errs.currentPassword = "Current password is required";
+    if (!newPassword) errs.newPassword = "New password is required";
+    else if (!passwordRegex.test(newPassword)) {
+      errs.newPassword = "Use 8+ chars with upper, lower, number and symbol";
+    }
+    if (!confirmPassword) errs.confirmPassword = "Please confirm your new password";
+    else if (newPassword !== confirmPassword) {
+      errs.confirmPassword = "Passwords do not match";
+    }
+    return errs;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+
+    setLoading(true);
+    try {
+      await cocobaseAuth.changePassword(currentPassword, newPassword);
+      notify.success("Password changed successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setExpanded(false);
+    } catch (error) {
+      notify.error(
+        error instanceof Error ? error.message : "Unable to change password",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="card p-5">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center justify-between text-left"
+      >
+        <div>
+          <div className="text-sm font-semibold">Change Password</div>
+          <div className="text-xs text-slatec">
+            Update the password for your account.
+          </div>
+        </div>
+        <Icons.ChevronDown
+          size={18}
+          className={`text-slatec transition-transform ${expanded ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {expanded && (
+        <motion.form
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          onSubmit={handleSubmit}
+          className="space-y-3 mt-4 pt-4 border-t border-border overflow-hidden"
+        >
+          <div>
+            <label className="label">Current Password</label>
+            <input
+              type="password"
+              className="input"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+            {errors.currentPassword && (
+              <p className="text-red-400 text-xs mt-1">
+                {errors.currentPassword}
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="label">New Password</label>
+            <input
+              type="password"
+              className="input"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            {errors.newPassword && (
+              <p className="text-red-400 text-xs mt-1">{errors.newPassword}</p>
+            )}
+          </div>
+          <div>
+            <label className="label">Confirm New Password</label>
+            <input
+              type="password"
+              className="input"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+            {errors.confirmPassword && (
+              <p className="text-red-400 text-xs mt-1">
+                {errors.confirmPassword}
+              </p>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full font-sora flex items-center justify-center gap-2 mt-1"
+          >
+            {loading ? "Updating..." : "Update Password"}
+          </button>
+        </motion.form>
+      )}
+    </div>
+  );
 }

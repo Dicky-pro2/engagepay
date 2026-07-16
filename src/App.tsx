@@ -26,6 +26,7 @@ import WithdrawalHistory from "./pages/WithdrawalHistory";
 import AdvertiserAnalytics from "./pages/AdvertiserAnalytics";
 import { useAuthStore } from "./store/authStore";
 import { ThemeProvider } from "./context/ThemeContext";
+import ResetPassword from "./pages/ResetPassword";
 import "./styles/theme.css";
 
 // Wraps a page component in a RouteErrorBoundary
@@ -67,6 +68,16 @@ export default function App() {
                 <ForgotPassword />
               )
             }
+          />
+          <Route
+          path="/reset-password"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" />
+            ) : ( 
+              <ResetPassword />
+            )
+          }
           />
 
           {/* Verification */}

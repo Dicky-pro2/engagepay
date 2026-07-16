@@ -76,6 +76,10 @@ export const authAPI = {
     if (env.IS_MOCK) return Promise.resolve({ data: { message: "mock" } });
     return apiClient.post(`/auth/reset-password/${token}`, { password });
   },
+  changePassword: (data: { currentPassword: string; newPassword: string }) => {
+    if (env.IS_MOCK) return Promise.resolve({ data: { message: "mock" } });
+    return apiClient.post("/auth/change-password", data);
+  },
 
   getMe: () => {
     if (env.IS_MOCK) return Promise.resolve({ data: { message: "mock" } });
