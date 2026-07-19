@@ -8,6 +8,7 @@ import type {
   Notification,
   Submission,
 } from "../types";
+import { useAuthStore } from "./authStore";
 
 interface UserAppData {
   tasks: Task[];
@@ -283,11 +284,30 @@ export const useAppStore = create<AppState>((set, get) => {
         submissions: [newSubmission, ...state.submissions],
       });
 
+      // Credit the earner's wallet for the completed task.
+      if (task?.reward) {
+        const authState = useAuthStore.getState();
+        if (authState.user) {
+          authState.updateWallet(authState.user.walletBalance + task.reward);
+        }
+        get().addTransaction({
+          type: "earning",
+          amount: task.reward,
+          description: `Reward for "${task.title}"`,
+        });
+      }
+
       return updatedTask;
     },
 
     addWithdrawal: (w) => {
       const state = get();
+
+      const authState = useAuthStore.getState();
+      if (authState.user && authState.user.walletBalance < w.amount) {
+        throw new Error("Insufficient balance for this withdrawal.");
+      }
+
       persistCurrent({
         withdrawals: [
           {
@@ -298,6 +318,16 @@ export const useAppStore = create<AppState>((set, get) => {
           },
           ...state.withdrawals,
         ],
+      });
+
+      // Debit immediately — funds are locked while the withdrawal is pending.
+      if (authState.user) {
+        authState.updateWallet(authState.user.walletBalance - w.amount);
+      }
+      get().addTransaction({
+        type: "withdrawal",
+        amount: -w.amount,
+        description: `Withdrawal via ${w.method}`,
       });
     },
 

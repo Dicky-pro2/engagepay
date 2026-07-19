@@ -38,7 +38,8 @@ export type TransactionType =
   | "task_payment"
   | "task_earning"
   | "refund"
-  | "bonus";
+  | "bonus"
+  | "earning";
 
 export interface Transaction {
   id: string;

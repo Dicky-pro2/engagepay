@@ -24,10 +24,33 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
 
-      login: (user, accessToken, refreshToken) => {
-        set({ user, accessToken, refreshToken, isAuthenticated: true });
-        useAppStore.getState().loadUserData(user.id);
-      },
+      login: (user, accessToken, refreshToken) =>
+        set((state) => {
+          // If this is the same user re-authenticating, keep the locally
+          // tracked wallet/stat values instead of letting a stale login
+          // payload (e.g. local demo storage) overwrite real progress.
+          const preserved =
+            state.user && state.user.id === user.id
+              ? {
+                  walletBalance: state.user.walletBalance,
+                  totalEarned: state.user.totalEarned,
+                  totalSpent: state.user.totalSpent,
+                  tasksCompleted: state.user.tasksCompleted,
+                  tasksPosted: state.user.tasksPosted,
+                }
+              : {};
+
+          const nextUser = { ...user, ...preserved };
+
+          useAppStore.getState().loadUserData(nextUser.id);
+
+          return {
+            user: nextUser,
+            accessToken,
+            refreshToken,
+            isAuthenticated: true,
+          };
+        }),
 
       setTokens: (accessToken, refreshToken) =>
         set({ accessToken, refreshToken, isAuthenticated: true }),
