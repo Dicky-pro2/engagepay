@@ -9,6 +9,7 @@ import type {
   Submission,
 } from "../types";
 import { useAuthStore } from "./authStore";
+import { useGamificationStore } from "./gamificationStore";
 
 interface UserAppData {
   tasks: Task[];
@@ -284,17 +285,34 @@ export const useAppStore = create<AppState>((set, get) => {
         submissions: [newSubmission, ...state.submissions],
       });
 
-      // Credit the earner's wallet for the completed task.
+      // Credit the earner's wallet, applying any active streak bonus.
       if (task?.reward) {
         const authState = useAuthStore.getState();
         if (authState.user) {
-          authState.updateWallet(authState.user.walletBalance + task.reward);
+          const newStreak = authState.recordDailyActivity();
+          const bonusPercent =
+            useGamificationStore.getState().getStreakBonus(newStreak);
+          const bonusAmount =
+            Math.round(task.reward * (bonusPercent / 100) * 100) / 100;
+
+          authState.updateWallet(
+            authState.user.walletBalance + task.reward + bonusAmount,
+          );
+
+          get().addTransaction({
+            type: "task_earning",
+            amount: task.reward,
+            description: `Reward for "${task.title}"`,
+          });
+
+          if (bonusAmount > 0) {
+            get().addTransaction({
+              type: "bonus",
+              amount: bonusAmount,
+              description: `${bonusPercent}% streak bonus (Day ${newStreak})`,
+            });
+          }
         }
-        get().addTransaction({
-          type: "earning",
-          amount: task.reward,
-          description: `Reward for "${task.title}"`,
-        });
       }
 
       return updatedTask;

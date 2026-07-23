@@ -13,6 +13,7 @@ interface AuthState {
   updateWallet: (newBalance: number) => void;
   updateName: (name: string) => void;
   verifyEmail: () => void;
+  recordDailyActivity: () => number;
   logout: () => void;
 }
 
@@ -26,9 +27,6 @@ export const useAuthStore = create<AuthState>()(
 
       login: (user, accessToken, refreshToken) =>
         set((state) => {
-          // If this is the same user re-authenticating, keep the locally
-          // tracked wallet/stat values instead of letting a stale login
-          // payload (e.g. local demo storage) overwrite real progress.
           const preserved =
             state.user && state.user.id === user.id
               ? {
@@ -37,6 +35,9 @@ export const useAuthStore = create<AuthState>()(
                   totalSpent: state.user.totalSpent,
                   tasksCompleted: state.user.tasksCompleted,
                   tasksPosted: state.user.tasksPosted,
+                  currentStreak: state.user.currentStreak,
+                  longestStreak: state.user.longestStreak,
+                  lastTaskCompletionDate: state.user.lastTaskCompletionDate,
                 }
               : {};
 
@@ -73,6 +74,43 @@ export const useAuthStore = create<AuthState>()(
             ? { ...state.user, isEmailVerified: true }
             : state.user,
         })),
+
+      // Returns the streak count AFTER this activity is recorded, so callers
+      // can immediately compute the bonus that applies to today's action.
+      recordDailyActivity: () => {
+        let resultStreak = 0;
+
+        set((state) => {
+          if (!state.user) return state;
+
+          const today = new Date().toDateString();
+
+          if (state.user.lastTaskCompletionDate === today) {
+            resultStreak = state.user.currentStreak;
+            return state; // already counted today, no change
+          }
+
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const wasYesterday =
+            state.user.lastTaskCompletionDate === yesterday.toDateString();
+
+          const nextStreak = wasYesterday ? state.user.currentStreak + 1 : 1;
+          const nextLongest = Math.max(state.user.longestStreak, nextStreak);
+          resultStreak = nextStreak;
+
+          return {
+            user: {
+              ...state.user,
+              currentStreak: nextStreak,
+              longestStreak: nextLongest,
+              lastTaskCompletionDate: today,
+            },
+          };
+        });
+
+        return resultStreak;
+      },
 
       logout: () => {
         set({

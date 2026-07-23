@@ -82,8 +82,8 @@ export const useGamificationStore = create<GamificationStore>((set, get) => ({
   },
 
   getStreakBonus: (days: number) => {
-    const bonus = STREAK_BONUSES.find((b) => b.day <= days);
-    return bonus?.bonusPercentage || 0;
+    const data = get().getStreakBonusData(days);
+    return data?.bonusPercentage || 0;
   },
 
   getStreakBonusData: (days: number) => {
